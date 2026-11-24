@@ -108,7 +108,7 @@ vmdance help                                    ;# every subcommand
 ## Documentation
 
 The full documentation is online:
-**[diegoenry.github.io/vmd-mdance-plugin](https://diegoenry.github.io/vmd-mdance-plugin/)**.
+**[AUcompbiophysics.github.io/vmdmdance](https://AUcompbiophysics.github.io/vmdmdance/)**.
 
 Its sources are in [`docs/`](docs/). It is built with Sphinx:
 `cd docs && make html`, then open `docs/_build/html/index.html`. Its
