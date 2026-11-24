@@ -1,0 +1,104 @@
+% The quick-start guide's numbers, made by numbers.tcl (make numbers):
+% its script, quickstart.tcl, run on the tau peptide of BitQT's examples. Do not edit.
+\newcommand{\qsVMD}{2.0.0a6}
+\newcommand{\qsArch}{MACOSXARM64}
+\newcommand{\qsTcl}{8.6.18}
+\newcommand{\qsBackendCommit}{a5d197b}
+\newcommand{\qsMinutes}{1}
+\newcommand{\qsMachine}{Apple M1 Max}
+\newcommand{\qsVersion}{1.0a1}
+\newcommand{\qsFrames}{6001}
+\newcommand{\qsAtoms}{50}
+\newcommand{\qsFitFrame}{999}
+\newcommand{\qsFitWorst}{0.002}
+\newcommand{\qsFitMean}{4.09}
+\newcommand{\qsAsIs}{3.38}
+\newcommand{\qsFitted}{3.30}
+\newcommand{\qsSuperposed}{1}
+\newcommand{\qsElbowRows}{2 & 2403 & 1.54 & 29\% & 1.00 \\
+3 & 1750 & 1.82 & 37\% & 0.84 \\
+4 & 1435 & 1.99 & 42\% & 0.61 \\
+5 & 1298 & 1.80 & 46\% & 0.97 \\
+6 & 1143 & 1.78 & 49\% & 0.74 \\
+7 & 1051 & 1.95 & 51\% & 0.64 \\
+8 & 967 & 1.93 & 53\% & 0.67 \\
+9 & 882 & 2.09 & 54\% & 0.57 \\
+10 & 843 & 1.99 & 56\% & 0.61 \\
+11 & 781 & 1.95 & 57\% & 0.67 \\
+12 & 745 & 1.93 & 58\% & 0.60}
+\newcommand{\qsDbLowest}{2}
+\newcommand{\qsDbLowestValue}{1.54}
+\newcommand{\qsChHighest}{2}
+\newcommand{\qsChHighestValue}{2403}
+\newcommand{\qsChFirst}{2403}
+\newcommand{\qsChLast}{745}
+\newcommand{\qsKFirst}{2}
+\newcommand{\qsKLast}{12}
+\newcommand{\qsDbDip}{6}
+\newcommand{\qsDbDipValue}{1.78}
+\newcommand{\qsDbDipBeforeK}{5}
+\newcommand{\qsDbDipBefore}{1.80}
+\newcommand{\qsDbDipAfterK}{7}
+\newcommand{\qsDbDipAfter}{1.95}
+\newcommand{\qsDbDipStability}{0.74}
+\newcommand{\qsStable}{2 and 5}
+\newcommand{\qsStableValues}{1.00 and 0.97}
+\newcommand{\qsStableLast}{5}
+\newcommand{\qsStableLastValue}{0.97}
+\newcommand{\qsAboveFrom}{6}
+\newcommand{\qsAboveMin}{0.57}
+\newcommand{\qsAboveMax}{0.74}
+\newcommand{\qsSuggestWords}{Davies--Bouldin: lowest at k 2, sharpest dip at k 6; Calinski--Harabasz: highest at k 2; seedings agree (0.9 or more) at k 2, 5}
+\newcommand{\qsK}{6}
+\newcommand{\qsKStability}{0.74}
+\newcommand{\qsKCh}{1143}
+\newcommand{\qsKDb}{1.78}
+\newcommand{\qsStayMin}{1.5}
+\newcommand{\qsStayMax}{2.0}
+\newcommand{\qsRunOne}{KMeans NANI, k 6 $\rightarrow$ 6 clusters}
+\newcommand{\qsSizes}{582, 1844, 693, 645, 1225 and 1012}
+\newcommand{\qsPcts}{10, 31, 12, 11, 20 and 17}
+\newcommand{\qsReps}{2629, 5982, 530, 2633, 108 and 5469}
+\newcommand{\qsCH}{1143}
+\newcommand{\qsDB}{1.78}
+\newcommand{\qsSilCentroid}{0.28}
+\newcommand{\qsSilPairs}{0.29}
+\newcommand{\qsSilNegative}{573}
+\newcommand{\qsSilNegativePct}{10}
+\newcommand{\qsHalfFirst}{3000}
+\newcommand{\qsHalfSecond}{3001}
+\newcommand{\qsDivergence}{0.009}
+\newcommand{\qsDiffCluster}{2}
+\newcommand{\qsDiffPoints}{6}
+\newcommand{\qsDiffFirst}{442}
+\newcommand{\qsDiffSecond}{251}
+\newcommand{\qsDiffFirstPct}{15}
+\newcommand{\qsDiffSecondPct}{8}
+\newcommand{\qsBothVisitAll}{1}
+\newcommand{\qsCompareWords}{first and second: divergence 0.009 (0: the same shares of the clusters; 0.69: no cluster in common); cluster 2 differs most, 14.7\% of first against 8.4\% of second}
+\newcommand{\qsMapOne}{39}
+\newcommand{\qsMapTwo}{14}
+\newcommand{\qsDivineLabel}{DIVINE, k 6 $\rightarrow$ 6 clusters}
+\newcommand{\qsDivineClusters}{6}
+\newcommand{\qsDivineSizes}{1085, 452, 1081, 1419, 932 and 1032}
+\newcommand{\qsDivineNoise}{0}
+\newcommand{\qsDivineAri}{0.41}
+\newcommand{\qsHelmLabel}{HELM, k 6 $\rightarrow$ 6 clusters}
+\newcommand{\qsHelmClusters}{6}
+\newcommand{\qsHelmSizes}{708, 491, 275, 1377, 1585 and 1565}
+\newcommand{\qsHelmNoise}{0}
+\newcommand{\qsHelmAri}{0.48}
+\newcommand{\qsEqualLabel}{eQual, radius 8 $\rightarrow$ 7 clusters}
+\newcommand{\qsEqualClusters}{7}
+\newcommand{\qsEqualSizes}{4632, 804, 432, 85, 37, 7 and 4}
+\newcommand{\qsEqualNoise}{0}
+\newcommand{\qsEqualAri}{0.09}
+\newcommand{\qsSweepBest}{KMeans NANI, k 2, StratAll}
+\newcommand{\qsSweepBestDb}{1.54}
+\newcommand{\qsSweepConfigs}{42}
+\newcommand{\qsSweepNotRun}{0}
+\newcommand{\qsEqualTopThree}{4632, 804 and 432}
+\newcommand{\qsEqualTopThreePct}{98}
+\newcommand{\qsRuns}{4}
+\newcommand{\qsExportFiles}{tau\_clusters.csv, tau\_distances.csv, tau\_labels.csv, tau\_residence.csv, tau\_silhouette.csv, tau\_summary.txt, tau\_timeline.csv, tau\_top\_frames.csv, tau\_transitions.csv, tau\_tree.csv}
+\newcommand{\qsSessionKB}{777}
