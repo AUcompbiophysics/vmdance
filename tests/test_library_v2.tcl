@@ -30,7 +30,10 @@ proc v2_wrap {} {
     proc ::mdance::job {sub args} {
         switch -- $sub {
             start {
-                lappend ::starts [list [lindex $args 0] [lindex $args 1] $::said]
+                # (a scan names its algorithm first, then its dataset)
+                set ds [expr {[lindex $args 0] eq "scan" ? [lindex $args 2] : [lindex $args 1]}]
+                lappend ::starts [list [lindex $args 0] $ds $::said]
+                set ::last_start $args
                 # (a timer set as the call starts: it runs before the call's
                 # answer is read when Tcl's event loop goes on meanwhile)
                 set ::tick 0
@@ -95,12 +98,12 @@ if {[real_lib] eq "" || [real_cli] eq ""} {
     v2_reset
     vmdance elbow -mol $m -sel all -ks {2 3 4} -kinit StratAll -percentage 50 -quiet 1
     set lib [v2_labels]
-    check "an elbow scan of 3 values of k makes one dataset ($::made) for its 3 calls ([v2_calls], [v2_sets] dataset)" [expr {
-        $::made == 1 && [v2_calls] eq {kmeans kmeans kmeans} && [v2_sets] == 1}]
+    check "an elbow scan of 3 values of k makes one dataset ($::made) and runs them as one scan, at once on the library's threads ([v2_calls])" [expr {
+        $::made == 1 && [v2_calls] eq {scan} && [v2_sets] == 1}]
     check "  and the library holds nothing once the scan has ended" [v2_clean]
-    check "  each call said, before it, that it runs in the library, and not that VMD waits" [expr {
-        [lmap s $::starts {lindex $s 2}] eq [lmap k {2 3 4} {string cat "KMeans NANI, k = $k, in the library"}]}]
-    check "  Tcl's event loop ran during every call (VMD draws and answers: $::ticked)" [expr {$::ticked eq {1 1 1}}]
+    check "  the step before it said that the library runs them at once, and not that VMD waits" [expr {
+        [lmap s $::starts {lindex $s 2}] eq [list "KMeans NANI, k = 2, 3, 4, in the library at once"]}]
+    check "  Tcl's event loop ran during it (VMD draws and answers: $::ticked)" [expr {$::ticked eq {1}}]
     use_cli
     vmdance elbow -mol $m -sel all -ks {2 3 4} -kinit StratAll -percentage 50 -quiet 1
     use_lib
@@ -109,12 +112,22 @@ if {[real_lib] eq "" || [real_cli] eq ""} {
     v2_reset
     vmdance elbow -mol $m -sel all -algorithm helm -initial 8 -initial-kinit StratAll -initial-percentage 50 -ks {2 3 4} -quiet 1
     set lib [v2_labels]
-    check "a HELM elbow scan: its first clustering and every k on one dataset ([v2_calls])" [expr {
-        $::made == 1 && [v2_calls] eq {kmeans helm helm helm} && [v2_sets] == 1 && [lsort -unique [v2_status]] eq "ok"}]
+    check "a HELM elbow scan: its first clustering, then every k as one scan, on one dataset ([v2_calls])" [expr {
+        $::made == 1 && [v2_calls] eq {kmeans scan} && [v2_sets] == 1 && [lsort -unique [v2_status]] eq "ok"}]
     use_cli
     vmdance elbow -mol $m -sel all -algorithm helm -initial 8 -initial-kinit StratAll -initial-percentage 50 -ks {2 3 4} -quiet 1
     use_lib
     check "  the program's labels" [expr {$lib eq [v2_labels]}]
+
+    # (a value the checks before a call refuse stays out of the scan, and is
+    # recorded "not run" as before: HELM from 8 starting clusters at k 20)
+    v2_reset
+    vmdance elbow -mol $m -sel all -algorithm helm -initial 8 -initial-kinit StratAll -initial-percentage 50 -ks {2 3 20} -quiet 1
+    set recs [dict get $::VMDance::Results::elbow records]
+    check "  a value refused before a call: kept out of the scan (-ks [lindex $::last_start [expr {[lsearch -exact $::last_start -ks] + 1}]]), recorded not run" [expr {
+        [lindex $::last_start [expr {[lsearch -exact $::last_start -ks] + 1}]] eq {2 3} &&
+        [lrange [v2_status] 0 1] eq {ok ok} && [lindex [v2_status] 2] ne "ok" &&
+        [string match "not run:*" [dict get [lindex $recs 2] message]]}]
 
     v2_reset
     vmdance sweep -mol $m -sel all -algorithms kmeans -ks {2 3 4} -seedings StratAll -params {kmeans {percentage 50}} -quiet 1
@@ -164,11 +177,11 @@ check "PRIME, the similarity and a pick: the program's answers (the similarity t
         [string match "*cancelled*" $e] && [llength [vmdance runs]] == $nruns && [v2_clean]}]
     set eb $::VMDance::Results::elbow
     v2_reset
-    set ::cancel_at 2
+    set ::cancel_at 1
     set e [err {vmdance elbow -mol $m -sel all -ks {2 3 4} -kinit StratAll -percentage 50 -quiet 1}]
     set ::cancel_at ""
-    check "  during an elbow scan's second call: the scan stops there ([llength $::starts] calls), none replaced ($e)" [expr {
-        [string match "*cancelled*" $e] && [llength $::starts] == 2 && $eb eq $::VMDance::Results::elbow && [v2_clean]}]
+    check "  during an elbow's scan: the job ends cancelled, the elbow not replaced, the library holds nothing ($e)" [expr {
+        [string match "*cancelled*" $e] && [v2_calls] eq {scan} && $eb eq $::VMDance::Results::elbow && [v2_clean]}]
     v2_reset
     set ::fail_at 1
     set e [err {vmdance -mol $m -sel all -k 3 -kinit StratAll -percentage 50 -quiet 1}]

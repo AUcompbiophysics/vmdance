@@ -9,7 +9,9 @@ MDANCE's part.
   is, and Cancel stops a call within a fraction of a second. A library of
   the first interface blocks VMD while it clusters, and the status line
   says so. Its calls cannot be cancelled: Cancel acts when one ends. Use
-  the program, or the library v2, for long trajectories.
+  the program, or the library v2, for long trajectories. The library v2
+  makes an elbow scan's values of k at once, on its threads (tau's 6001
+  frames of 99 atoms, k from 2 to 20: 6.5 s, 12.5 s one value at a time).
 - A clustering writes every frame's coordinates to a file in the plugin's
   private folder: 3 × atoms numbers per frame. This is the program's
   input, written with the library too, and it is kept for the questions

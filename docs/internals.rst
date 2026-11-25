@@ -223,6 +223,17 @@ A library of CPP-MDANCE's second interface (``::mdance::info`` says API
   the program may be of the first interface.
 - ``Backend::algorithms`` reads DIVINE from ``::mdance::info`` instead of
   asking ``::mdance::divine``.
+- An elbow scan of KMeans NANI, DIVINE or HELM makes its values of k at
+  once, as one call (``::mdance::scan``, on the library's threads:
+  ``Job::_scan_v2``). The values are those that would be called: none
+  refused already, none the checks before a call refuse. Its answers wait
+  in ``scanned``, keyed on the request (k, metric, parameters). The loop of
+  ``_do_elbow`` then goes on as before, ``_cluster`` reading each value's
+  answer, or error, from there: the checks after a call, the records, the
+  scores and the "not run" values are the same. Cancelled, the values the
+  scan made are kept as the partial scan, as those before a Cancel are with
+  one call a value. An elbow with ``-stability`` (its other seedings are
+  called at each k) and eQual's radii keep one call a value.
 
 tests/test_library_v2.tcl tests this path; tests/test_hardening2_h3.tcl
 tests the first interface's, and skips for a library v2.

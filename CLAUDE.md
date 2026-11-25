@@ -487,7 +487,13 @@ and Molywood Studio. docs/design.rst and docs/internals.rst describe it.
   test_hardening2_h3 tests API 1 and skips for API 2. A call command of v2
   can be renamed (a test's wrapper): it knows its call by its ClientData,
   not its name (fixed 2026-11-25; the first build of v2 called a renamed
-  `kmeans_h3` "unknown").
+  `kmeans_h3` "unknown"). An elbow of KMeans NANI, DIVINE or HELM (not
+  with -stability, not eQual's radii) makes its values at once, one
+  `::mdance::scan` (Job::_scan_v2: the values that would be called), and
+  the loop reads them from `scanned` (keyed {k metric params}) through
+  Job::_cluster, whose checks after a call, records and "not run" are
+  unchanged. A scan cancelled answers with the values it made (the others
+  "cancelled"), kept as Job::partial.
 - CPP-MDANCE's main since PR #61 (3a2f073) seeds k-means' KmeansPP and
   Random from the clock (it was a fixed seed): two runs, and the program
   and the library, give different labels. A comparison of labels between

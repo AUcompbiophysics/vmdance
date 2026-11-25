@@ -48,6 +48,7 @@ namespace eval ::VMDance::Job {
     variable lib_rows {}               ;# the job's coordinates as the library's list (_call)
     variable lib_of ""                 ;# the extraction they are of
     variable lib_data ""               ;# API 2: the job's coordinates as the library's dataset (_call_v2)
+    variable scanned {}                ;# API 2: an elbow scan's answers made at once ({k metric params} -> {ok answer}: _scan_v2)
     variable lib2_peak 40              ;# API 2: bytes a coordinate at a call's peak (the dataset and the algorithms' copies)
     # what a clustering request holds, and its defaults
     variable input_defaults {mol top sel "name CA" first 0 last -1 step 1 fit ""}
@@ -368,6 +369,7 @@ proc ::VMDance::Job::_body {kind req done} {
         set running 0
         set backend ""
         variable lib_rows {}
+        variable scanned {}
         _free_lib_data
         # (the coordinates' files dropped meanwhile: the job no longer reads them)
         ::VMDance::Coords::reap
@@ -403,19 +405,9 @@ proc ::VMDance::Job::_coords {req {lo 0.0} {hi 0.4}} {
 # keeps drawing and answering), says how far it is, and Cancel stops it
 # within a fraction of a second.
 proc ::VMDance::Job::_call_v2 {c what msg path} {
-    variable cancelled; variable inner; variable lib_data; variable lib_of
-    set natoms [dict get $c natoms]
-    set nf [llength [dict get $c frames]]
+    variable cancelled; variable inner
     set op [lindex $what 0]
-    _library_takes $c
-    set of [list [dict get $c csv] [dict get $c digest]]
-    if {$lib_of ne $of || $lib_data eq "" || [info commands $lib_data] eq ""} {
-        _free_lib_data
-        _progress [lindex $inner 0] "$msg: reading the frames for the library"
-        set lib_data [::mdance::data create $nf $natoms]
-        ::VMDance::Coords::each $c i row { $lib_data frame $i $row } ::VMDance::Job::cancelled
-        set lib_of $of
-    }
+    set lib_data [_lib_dataset $c $msg]
     switch -- $op {
         cluster {
             lassign $what - a k metric params initial
@@ -466,6 +458,75 @@ proc ::VMDance::Job::_call_v2 {c what msg path} {
     if {[catch {dict size $r}]} { error "the library's answer is not a dictionary" }
     return [dict merge $r [dict create _backend [list library $path]]]
 }
+# The job's dataset in the library for the coordinates c: made (and filled)
+# once a job, kept for its calls while c is the extraction they read.
+proc ::VMDance::Job::_lib_dataset {c msg} {
+    variable inner; variable lib_data; variable lib_of
+    _library_takes $c
+    set of [list [dict get $c csv] [dict get $c digest]]
+    if {$lib_of ne $of || $lib_data eq "" || [info commands $lib_data] eq ""} {
+        _free_lib_data
+        _progress [lindex $inner 0] "$msg: reading the frames for the library"
+        set lib_data [::mdance::data create [llength [dict get $c frames]] [dict get $c natoms]]
+        ::VMDance::Coords::each $c i row { $lib_data frame $i $row } ::VMDance::Job::cancelled
+        set lib_of $of
+    }
+    return $lib_data
+}
+
+# An elbow scan's values of k as one call of the library v2's, run at once
+# on its threads (::mdance::scan, as a job of the library's: Cancel stops
+# every value; progress is the share of the values done, within [lo, hi]).
+# ks: the values to run (those not refused before); initial: HELM's starting
+# labels. Fills `scanned`, which Job::_cluster reads instead of calling the
+# library for a value whose request it holds ({k metric params}): {1 answer}
+# or {0 error}. Returns 1 when the scan was cancelled (what finished before
+# is in `scanned`).
+proc ::VMDance::Job::_scan_v2 {c req ks initial lo hi} {
+    variable cancelled; variable inner; variable scanned
+    set a [dict get $req algorithm]
+    set metric [dict get $req metric]
+    set params [dict get $req params]
+    set label [::VMDance::Algo::label $a]
+    set inner [list $lo $hi]
+    set d [_lib_dataset $c $label]
+    set argv [list scan $a $d -ks $ks {*}[::VMDance::Algo::lib_args $a $params $metric]]
+    if {$a eq "helm"} { lappend argv -labels $initial }
+    set step "$label, k = [join $ks {, }], in the library at once"
+    _progress $lo $step
+    if {$cancelled} { return 1 }
+    lassign [::VMDance::Backend::current] - path
+    set j [::mdance::job start {*}$argv]
+    try {
+        while 1 {
+            after 100 [info coroutine]
+            yield
+            set st [::mdance::job status $j]
+            if {[dict get $st state] ne "running"} break
+            if {$cancelled} { ::mdance::job cancel $j; continue }
+            set p [dict get $st progress]
+            if {$p > 0} { _progress [expr {$lo + ($hi - $lo) * $p}] "$step: [expr {round(100 * $p)}]%" }
+        }
+        # (a scan cancelled answers too: the values it made, the others
+        # "cancelled")
+        set rs [::mdance::job result $j]
+        set j ""
+    } finally {
+        if {$j ne ""} { catch {::mdance::job forget $j} }
+    }
+    set stopped $cancelled
+    foreach r $rs {
+        set key [list [dict get $r k] $metric $params]
+        if {[dict exists $r error]} {
+            if {[dict get $r error] eq "cancelled"} { set stopped 1; continue }
+            dict set scanned $key [list 0 [dict get $r error]]
+        } else {
+            dict set scanned $key [list 1 [dict merge [dict remove $r k] [dict create _backend [list library $path]]]]
+        }
+    }
+    return $stopped
+}
+
 # The job's dataset in the library, freed (a job of the library's still
 # reading it frees it when it ends).
 proc ::VMDance::Job::_free_lib_data {} {
@@ -958,7 +1019,17 @@ proc ::VMDance::Job::_cluster {c req lo hi {initial ""}} {
     }
     set inner [list $lo $hi]
     _progress $lo "$label[expr {$k ne "" ? ", k = $k" : ""}]"
-    if {[catch {_call $c [list cluster $a $k [dict get $req metric] [dict get $req params] $initial] $label} raw opts]} {
+    # (made already by an elbow's scan of the library v2, for this very
+    # request: its answer, or its error, as the call would give them)
+    variable scanned
+    set key [list $k [dict get $req metric] [dict get $req params]]
+    if {[dict exists $scanned $key]} {
+        lassign [dict get $scanned $key] ok raw
+        set failed [expr {$ok ? 0 : [catch {error $raw} raw opts]}]
+    } else {
+        set failed [catch {_call $c [list cluster $a $k [dict get $req metric] [dict get $req params] $initial] $label} raw opts]
+    }
+    if {$failed} {
         # (a later split of DIVINE's, of a cluster too small for its NANI's
         # two seeds, which the backend calls kClusters: Algo::check_combination
         # can check the first only)
@@ -1180,6 +1251,43 @@ proc ::VMDance::Job::_do_elbow {req} {
     # (HELM's records are scored at the end)
     set hi [expr {[dict get $req algorithm] eq "helm" ? 0.95 : 1.0}]
     set invalid [::VMDance::_get $req invalid {}]
+    # With the library v2, the values of k are made at once on its threads
+    # (_scan_v2), those that would be called: not a value refused already,
+    # nor one the checks before a call refuse. The loop below then goes on as
+    # it would, each value's answer read from the scan (Job::_cluster), its
+    # checks after the call made, its record kept. Not for a scan with the
+    # stability (its other seedings are called at each k) nor eQual's radii.
+    set a [dict get $req algorithm]
+    if {[lindex $backend 0] eq "library" && [::VMDance::Backend::lib_api] >= 2 && ![llength $radii] &&
+            $a in {kmeans divine helm} && ![llength [::VMDance::_get $req stability {}]]} {
+        set nf [llength [dict get $c frames]]
+        set run {}
+        foreach k $ks {
+            if {[dict exists $invalid $k]} continue
+            if {$a eq "helm" && [catch {::VMDance::Algo::check_starting $k [dict get $req params] [::VMDance::Algo::starting_sizes $initial] $nf}]} continue
+            if {$a eq "divine" && [catch {_divine_repeats $c $k [dict get $req params]}]} continue
+            lappend run $k
+        }
+        if {[llength $run] > 1} {
+            if {[_scan_v2 $c $req $run $initial $lo $hi]} {
+                # (cancelled: the values it made are kept, as a scan
+                # cancelled one value after another keeps those before)
+                variable scanned
+                foreach k $ks {
+                    set key [list $k [dict get $req metric] [dict get $req params]]
+                    if {![dict exists $scanned $key] || ![lindex [dict get $scanned $key] 0]} continue
+                    dict set req k $k
+                    if {![catch {_cluster $c $req $hi $hi $initial} cl]} {
+                        lappend recs [dict merge [dict create k $k] [_record $cl]]
+                    }
+                }
+                _elbow_partial $req $recs $t0 $c
+                error "cancelled"
+            }
+            # (the values are made: the loop reads them)
+            set lo [expr {$hi - 0.01}]
+        }
+    }
     foreach k $ks {
         if {$cancelled} { _elbow_partial $req $recs $t0 $c; error "cancelled" }
         if {[dict exists $invalid $k]} {
