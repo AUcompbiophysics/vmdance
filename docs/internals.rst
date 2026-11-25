@@ -200,6 +200,33 @@ window shows it. It yields again after the call, since VMD reads a Cancel
 pressed during the call only then. The job stops there, before it goes on
 or publishes (``lib_most`` counts the call once it is made).
 
+A library of CPP-MDANCE's second interface (``::mdance::info`` says API
+2: ``Backend::lib_api``, read once when it is loaded) takes the other path,
+``Job::_call_v2``:
+
+- The job's coordinates go into one dataset of the library's
+  (``lib_data``: ``::mdance::data create``, then ``$d frame i row`` for the
+  rows ``Coords::each`` reads, the program's CSV's numbers), keyed on the
+  extraction like ``lib_rows`` and freed when the job ends
+  (``_free_lib_data``). A scan's every k, and HELM's first clustering,
+  use the same dataset.
+- Each call runs as a job of the library's (``::mdance::job start``), on
+  a thread of its own. The plugin's job yields every 100 ms while it runs,
+  so VMD draws and answers. It posts the call's progress (the library's
+  fraction, within the step's share). A Cancel cancels the library's job,
+  which stops within a fraction of a second; the plugin's job then fails
+  ``cancelled``, nothing published.
+- ``Job::_library_fits`` checks the memory only (about 40 bytes a
+  coordinate at a call's peak: ``lib2_peak``); the library makes no text.
+  ``Job::_library_divine`` is not asked: the library v2 fails such a split
+  with a message, as the program does. ``Job::_divine_repeats`` still is:
+  the program may be of the first interface.
+- ``Backend::algorithms`` reads DIVINE from ``::mdance::info`` instead of
+  asking ``::mdance::divine``.
+
+tests/test_library_v2.tcl tests this path; tests/test_hardening2_h3.tcl
+tests the first interface's, and skips for a library v2.
+
 ``GUI::_progress`` shows a new step at once. Only the same step's counts
 (its text but for its numbers) are shown at most every 250 ms.
 
@@ -415,6 +442,8 @@ Where each part of the plugin, its tests and its documentation is::
                           or deleted under a clustering, the drawing and the picks, a selection's atoms, imports
      test_hardening2_*.tcl  what the reviews of the second round's fixes found, a suite each (fx_g1 to fx_g5, g6 to g9, h1, oi, h3,
                           h4: docs/tests.rst says what each keeps); g9's, what the window's fixes ask of the core
+     test_library_v2.tcl  a library of CPP-MDANCE's second interface: one dataset a job, its calls as jobs (Cancel, errors,
+                          the event loop meanwhile), the program's answers (the real backend; skips for a library of the first)
      test_groups.tcl      the groups and their colours, the make-up, the map (numpy's PCA), the profiles, the scans' stability,
                           eQual's radius scan, HELM's merges' heights, each against a direct computation (the real backend)
      test_ux.tcl          what the review of the window's use added to the core and the command: alignment, timeline, the silhouette

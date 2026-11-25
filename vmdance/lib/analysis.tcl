@@ -47,6 +47,8 @@ namespace eval ::VMDance::Job {
     variable lib_most 0                ;# the most coordinates given to the library in this VMD
     variable lib_rows {}               ;# the job's coordinates as the library's list (_call)
     variable lib_of ""                 ;# the extraction they are of
+    variable lib_data ""               ;# API 2: the job's coordinates as the library's dataset (_call_v2)
+    variable lib2_peak 40              ;# API 2: bytes a coordinate at a call's peak (the dataset and the algorithms' copies)
     # what a clustering request holds, and its defaults
     variable input_defaults {mol top sel "name CA" first 0 last -1 step 1 fit ""}
 }
@@ -354,7 +356,7 @@ proc ::VMDance::Job::_body {kind req done} {
             _library_fits [dict get $in natoms] [llength [dict get $in frames]]
             # (and what would crash it: an elbow's smallest k, its others and
             # a sweep's configurations one by one, as they are run)
-            if {$kind in {cluster elbow}} {
+            if {$kind in {cluster elbow} && [::VMDance::Backend::lib_api] < 2} {
                 _library_divine [dict get $req algorithm] [lindex [::VMDance::_get $req ks [dict get $req k]] 0] [dict get $req params]
             }
         }
@@ -366,7 +368,7 @@ proc ::VMDance::Job::_body {kind req done} {
         set running 0
         set backend ""
         variable lib_rows {}
-        variable lib_of ""
+        _free_lib_data
         # (the coordinates' files dropped meanwhile: the job no longer reads them)
         ::VMDance::Coords::reap
     }
@@ -391,6 +393,88 @@ proc ::VMDance::Job::_coords {req {lo 0.0} {hi 0.4}} {
     }} $lo $hi] ::VMDance::Job::cancelled
 }
 
+# A call of a library of CPP-MDANCE's second interface (API 2; Job::_call
+# hands it over). The job's coordinates are held by the library as one
+# dataset (lib_data), filled once from the rows the extraction read (as the
+# program's CSV holds them: the same numbers, so the library and the
+# program cluster the same data) and freed at the job's end; at 8 bytes a
+# number, no text is made of them. The call runs as a job of the library's,
+# on a thread of its own: the job's coroutine yields while it runs (VMD
+# keeps drawing and answering), says how far it is, and Cancel stops it
+# within a fraction of a second.
+proc ::VMDance::Job::_call_v2 {c what msg path} {
+    variable cancelled; variable inner; variable lib_data; variable lib_of
+    set natoms [dict get $c natoms]
+    set nf [llength [dict get $c frames]]
+    set op [lindex $what 0]
+    _library_takes $c
+    set of [list [dict get $c csv] [dict get $c digest]]
+    if {$lib_of ne $of || $lib_data eq "" || [info commands $lib_data] eq ""} {
+        _free_lib_data
+        _progress [lindex $inner 0] "$msg: reading the frames for the library"
+        set lib_data [::mdance::data create $nf $natoms]
+        ::VMDance::Coords::each $c i row { $lib_data frame $i $row } ::VMDance::Job::cancelled
+        set lib_of $of
+    }
+    switch -- $op {
+        cluster {
+            lassign $what - a k metric params initial
+            set opts [::VMDance::Algo::lib_args $a $params $metric]
+            switch -- $a {
+                equal { set argv [list equal $lib_data {*}$opts] }
+                helm  { set argv [list helm $lib_data $k $initial {*}$opts] }
+                default { set argv [list $a $lib_data $k {*}$opts] }
+            }
+        }
+        analysis {
+            lassign $what - metric labels
+            set argv [list analysis $lib_data -metric $metric -labels $labels]
+        }
+        prime {
+            lassign $what - metric trim weighted labels
+            set argv [list prime $lib_data -metric $metric -labels $labels -trim-frac $trim]
+            if {$weighted} { lappend argv -weighted }
+        }
+        select {
+            lassign $what - metric method param nbins
+            set argv [list select $lib_data -metric $metric -method $method -param $param -nbins $nbins]
+        }
+    }
+    lassign $inner lo hi
+    set step "$msg[expr {$op eq "cluster" && [lindex $what 2] ne "" ? ", k = [lindex $what 2]" : ""}], in the library"
+    _progress $lo $step
+    if {$cancelled} { error "cancelled" }
+    set j [::mdance::job start {*}$argv]
+    try {
+        while 1 {
+            after 100 [info coroutine]
+            yield
+            set st [::mdance::job status $j]
+            if {[dict get $st state] ne "running"} break
+            if {$cancelled} { ::mdance::job cancel $j; continue }
+            set p [dict get $st progress]
+            if {$p > 0} { _progress [expr {$lo + ($hi - $lo) * $p}] "$step: [expr {round(100 * $p)}]%" }
+        }
+        if {$cancelled} { error "cancelled" }
+        # (the call's error, if it failed: the library's message)
+        set r [::mdance::job result $j]
+        set j ""
+    } finally {
+        if {$j ne ""} { catch {::mdance::job forget $j} }
+    }
+    if {$op eq "select"} { set r [dict create indices $r] }
+    if {[catch {dict size $r}]} { error "the library's answer is not a dictionary" }
+    return [dict merge $r [dict create _backend [list library $path]]]
+}
+# The job's dataset in the library, freed (a job of the library's still
+# reading it frees it when it ends).
+proc ::VMDance::Job::_free_lib_data {} {
+    variable lib_data; variable lib_of
+    if {$lib_data ne "" && [info commands $lib_data] ne ""} { catch {$lib_data delete} }
+    set lib_data ""
+    set lib_of ""
+}
+
 # One call of the backend (in the background when it is the program).
 # what: {cluster a k metric params initial} | {analysis metric labels} |
 # {prime metric trim weighted labels} | {select metric method param
@@ -408,6 +492,9 @@ proc ::VMDance::Job::_call {c what {msg ""}} {
     set natoms [dict get $c natoms]
     set nf [llength [dict get $c frames]]
     set op [lindex $what 0]
+    if {$bk eq "library" && [::VMDance::Backend::lib_api] >= 2} {
+        return [_call_v2 $c $what $msg $path]
+    }
     if {$bk eq "library"} {
         _library_takes $c
         if {$op eq "cluster"} { _library_divine [lindex $what 1] [lindex $what 2] [lindex $what 4] }
@@ -559,6 +646,17 @@ proc ::VMDance::Job::_line {msg line} {
 proc ::VMDance::Job::_library_fits {natoms nf {text ""}} {
     variable lib_text_max; variable lib_peak; variable lib_kept; variable lib_most
     set n [expr {3 * wide($natoms) * $nf}]
+    if {[::VMDance::Backend::lib_api] >= 2} {
+        # (API 2 holds the coordinates as doubles in a dataset, makes no text
+        # of them, and frees them at the job's end: only the memory counts)
+        variable lib2_peak
+        set need [expr {$lib2_peak * $n}]
+        set free [_memory_free]
+        if {$free ne "" && $need > $free} {
+            error "-sel, -first, -last, -step: the library would need about [_size $need] more in VMD for $nf frames × $natoms atoms, and [_size $free] is free; use the program (Settings ▸ Backend, or vmdance backend -mode cli -cli path), or fewer atoms (-sel) or frames (-first, -last, -step)"
+        }
+        return
+    }
     if {$text eq ""} { set text [expr {17 * $n}] }
     set what "$nf frames × $natoms atoms"
     set fix "use the program (Settings ▸ Backend, or vmdance backend -mode cli -cli path[expr {$::VMDance::Backend::mode eq "auto" ? ": Automatic found none" : ""}]), or fewer atoms (-sel) or frames (-first, -last, -step)"

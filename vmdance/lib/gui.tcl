@@ -693,7 +693,7 @@ proc ::VMDance::GUI::_build_toolbar {} {
     _tb_button $f export export  Export  "Export results… ($k+E)\nthe clusters, the labels, the representatives' structures, each cluster's trajectory, the plots' data" {::VMDance::GUI::act export}
     _tb_button $f figure figure  Figures "Create figures… ($k+P)\nPDF, PNG or EPS of the plots" {::VMDance::GUI::act figures}
     _tb_sep $f s2
-    _tb_button $f cluster cluster Cluster "Cluster ($k+R)\nwith the algorithm and parameters of Setup, in the background (with the library, VMD waits until it ends)" {::VMDance::GUI::act cluster}
+    _tb_button $f cluster cluster Cluster "Cluster ($k+R)\nwith the algorithm and parameters of Setup, in the background (with CPP-MDANCE's library before its v2, VMD waits until it ends)" {::VMDance::GUI::act cluster}
     _tb_button $f elbow   elbow   Elbow   "Elbow scan\nthe same clustering at every k of Scans ▸ Elbow (eQual: at every radius)" {::VMDance::GUI::act elbow}
     _tb_button $f cancel  cancel  Cancel  "Cancel the running job (what was there is kept)" {::VMDance::GUI::act cancel}
     $f.cancel state disabled
@@ -1457,10 +1457,17 @@ proc ::VMDance::GUI::_availability {{again 0}} {
     } else {
         set S(unavailable) ""
     }
-    # (the library runs in VMD, which waits for each call: said here, and
-    # when Automatic took it, finding no program, which nothing said)
+    # (a library of the first interface runs in VMD, which waits for each
+    # call: said here, and when Automatic took the library, finding no
+    # program, which nothing said; one of the second runs its calls on a
+    # thread of its own, as the program does)
     if {[_in_library]} {
-        set S(unavailable) [string trim "$S(unavailable) The library clusters, in VMD, which does not respond during a clustering[expr {[dict get [::VMDance::Backend::settings] -mode] eq "auto" ? " (Automatic found no mdance-cli: Settings ▸ Backend)" : ""}]."]
+        set auto [expr {[dict get [::VMDance::Backend::settings] -mode] eq "auto" ? " (Automatic found no mdance-cli: Settings ▸ Backend)" : ""}]
+        if {[::VMDance::Backend::lib_api] >= 2} {
+            set S(unavailable) [string trim "$S(unavailable) The library clusters, in VMD, in the background; Cancel stops it$auto."]
+        } else {
+            set S(unavailable) [string trim "$S(unavailable) The library clusters, in VMD, which does not respond during a clustering$auto."]
+        }
     }
 }
 # The chosen algorithm's logo (MDANCE's) beside Setup's chooser, at the
@@ -1480,8 +1487,8 @@ proc ::VMDance::GUI::_algo_logo {{have ""}} {
     }
     $page(setup).alg.logo configure -image $img
 }
-# Whether the backend in use is the library (VMD waits for each of its
-# calls).
+# Whether the backend in use is the library (one of the first interface
+# makes VMD wait for each of its calls).
 proc ::VMDance::GUI::_in_library {} {
     expr {![catch {::VMDance::Backend::current} u] && [lindex $u 0] eq "library"}
 }
@@ -2608,7 +2615,7 @@ proc ::VMDance::GUI::sweep {} {
     } err]} { _error "No sweep:\n$err"; return }
     set n [llength [dict get $req configs]]
     if {$n > 50 && [tk_messageBox -parent $w -type okcancel -icon question -title VMDance \
-            -message "The sweep runs $n clusterings. Go on?" -detail [expr {[_in_library] ?
+            -message "The sweep runs $n clusterings. Go on?" -detail [expr {[_in_library] && [::VMDance::Backend::lib_api] < 2 ?
                 "Each clustering runs in the library, in VMD, which does not respond during one; Cancel stops the sweep between two." :
                 "It runs in the background; Cancel stops it."}]] ne "ok"} return
     _start sweep $req "Sweeping $n configurations" \
@@ -3962,7 +3969,7 @@ proc ::VMDance::GUI::help {} {
         h "First\n"
         {} "Load a trajectory in VMD (a structure, then its frames). The molecule appears in Setup with its atoms and frames.\n"
         h "Cluster\n"
-        {} "Setup: the molecule, the atoms (the same in every frame; Cα atoms by default), the frames and every n-th; optionally a fit to the first frame — the note under it says whether the frames look superposed already. Choose the algorithm and its parameters, and press Cluster. The clustering runs in the background; Cancel stops it and keeps what was there (with the library, VMD waits until each clustering ends, and Cancel acts then). Every clustering is kept as a run (Results ▸ Run).\n"
+        {} "Setup: the molecule, the atoms (the same in every frame; Cα atoms by default), the frames and every n-th; optionally a fit to the first frame — the note under it says whether the frames look superposed already. Choose the algorithm and its parameters, and press Cluster. The clustering runs in the background; Cancel stops it and keeps what was there (with CPP-MDANCE's library before its v2, VMD waits until each clustering ends, and Cancel acts then). Every clustering is kept as a run (Results ▸ Run).\n"
         h "Explore\n"
         {} "Results: the table of clusters (frames, share, the mean square deviation within, from the representative, the representative's frame); click a heading to sort. Selecting clusters there or in a plot shows them on top everywhere, and the 3D tab can overlay their frames. Double-click a cluster to go to its representative.\n"
         h "Plots\n"

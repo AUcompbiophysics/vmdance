@@ -4,9 +4,12 @@ Notes and limits
 What the plugin cannot do, or does at a cost, and where its results and
 MDANCE's part.
 
-- The library blocks VMD while it clusters; the status line says so. A
-  call cannot be cancelled: Cancel acts when it ends. Use the program for
-  long trajectories.
+- A library of CPP-MDANCE's second interface (its library v2) clusters on
+  a thread of its own: VMD stays usable, the status line says how far it
+  is, and Cancel stops a call within a fraction of a second. A library of
+  the first interface blocks VMD while it clusters, and the status line
+  says so. Its calls cannot be cancelled: Cancel acts when one ends. Use
+  the program, or the library v2, for long trajectories.
 - A clustering writes every frame's coordinates to a file in the plugin's
   private folder: 3 × atoms numbers per frame. This is the program's
   input, written with the library too, and it is kept for the questions
@@ -31,9 +34,14 @@ MDANCE's part.
     one). These measures say how far they are, and the window's Cancel
     stops them.
 
-- The library is given the coordinates as one Tcl list, the same for every
-  call of a job; a scan reads the frames for it once. CPP-MDANCE's Tcl
-  binding makes a text of that list once.
+- The library v2 holds a job's coordinates itself, as one dataset of
+  doubles (8 bytes a coordinate), filled once for every call of the job
+  and freed when the job ends. Tcl makes no list or text of them. A call
+  that needs more memory than VMD can get (about 40 bytes a coordinate at
+  its peak) is refused, as below.
+- A library of the first interface is given the coordinates as one Tcl
+  list, the same for every call of a job; a scan reads the frames for it
+  once. CPP-MDANCE's Tcl binding makes a text of that list once.
 
   - A call takes about 180 bytes of VMD's memory a coordinate at its peak.
     Tcl keeps about 120 of them until VMD quits, for the calls after.
@@ -95,8 +103,9 @@ MDANCE's part.
     MDANCE's scores at every split. An elbow scan with ``-end-mode k``
     gives them.
   - A later split of a cluster too small to seed fails the run. With
-    CompSim, it crashes the program: the library is refused CompSim below
-    50% above k 2.
+    CompSim, it crashes the program: a library of the first interface is
+    refused CompSim below 50% above k 2. The library v2 fails the run
+    with a message, as the program fails.
 
 - KMeans NANI seeded by CompSim can end with an empty cluster.
   CPP-MDANCE's k-means does not move a cluster that loses its frames;

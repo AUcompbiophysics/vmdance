@@ -30,7 +30,8 @@ In the window
 
 4. **Setup ▸ Algorithm**: KMeans NANI, with k 6 by default. Press
    **Cluster** (Ctrl+R). It runs in the background. The ring in the
-   toolbar shows how far it is. With the library, VMD waits until it ends.
+   toolbar shows how far it is. With CPP-MDANCE's library before its v2,
+   VMD waits until it ends.
 5. **Results**: the table of clusters. Click a cluster: it is drawn on top
    in every plot. Double-click it: VMD goes to its representative frame.
 6. **The plots**, on the right: Populations, Timeline, Transitions … Hover

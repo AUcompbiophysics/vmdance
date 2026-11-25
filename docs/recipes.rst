@@ -177,7 +177,8 @@ The plugin runs CPP-MDANCE's program or its library:
 
 - the program, ``mdance-cli``, runs in the background, and VMD is free
   meanwhile;
-- the library runs inside VMD: no files, and VMD waits.
+- the library runs inside VMD, with no files: its v2 in the background,
+  as the program (Cancel stops it); before v2, VMD waits.
 
 .. code-block:: tcl
 
