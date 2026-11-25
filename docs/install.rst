@@ -120,7 +120,7 @@ The plugin is Tcl/Tk: nothing is built or copied. Add its path to
 
 .. code-block:: tcl
 
-   lappend auto_path /path/to/vmd-mdance-plugin/vmdance
+   lappend auto_path /path/to/vmdance/vmdance   ;# the plugin: the vmdance folder of the clone
    package require vmdance   ;# adds the menu entry Analysis > VMDance
    set env(MDANCE_CLI) /path/to/CPP-MDANCE/build/cli/mdance-cli
    set env(MDANCE_LIB) /path/to/CPP-MDANCE/build/tcl/mdance_tcl.so   ;# optional
@@ -146,8 +146,8 @@ The program is looked for in this order:
 2. in ``MDANCE_CLI``;
 3. in the plugin's folder (``mdance-cli`` or ``bin/mdance-cli``);
 4. on the ``PATH``;
-5. in a CPP-MDANCE build beside the repository's folder
-   (``vmd-mdance-plugin/../CPP-MDANCE/build/cli``, or one folder higher).
+5. in a CPP-MDANCE build beside the clone's folder (``CPP-MDANCE/build/cli``
+   in the folder that holds ``vmdance``, or one folder higher).
 
 The library is looked for likewise (``MDANCE_LIB``, ``mdance_tcl…``).
 

@@ -224,7 +224,7 @@ Get the plugin (\cmd{git clone https://github.com/AUcompbiophysics/vmdance.git})
 then add three lines to your \cmd{\textasciitilde/.vmdrc}:
 
 \begin{lstlisting}[style=tcl]
-lappend auto_path /path/to/vmd-mdance-plugin/vmdance
+lappend auto_path /path/to/vmdance/vmdance   ;# the clone's vmdance folder
 package require vmdance   ;# adds the menu entry Analysis > VMDance
 set env(MDANCE_CLI) /path/to/CPP-MDANCE/build/cli/mdance-cli
 \end{lstlisting}

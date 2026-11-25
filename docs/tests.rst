@@ -7,7 +7,7 @@ Each suite says ``PASS``, ``FAIL`` or ``SKIP`` for each check, then
 
 .. code-block:: sh
 
-   cd vmd-mdance-plugin
+   cd vmdance                          # the clone
    sh tests/run_all.sh                 # every suite
    NOGUI=1 sh tests/run_all.sh         # without the window
    vmd -dispdev text -e tests/strict.tcl -args tests/test_groups.tcl < /dev/null   # one suite

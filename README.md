@@ -79,7 +79,7 @@ export MDANCE_LIB=$PWD/build/tcl/mdance_tcl.so        # the library (optional)
 Then add the plugin to `~/.vmdrc`:
 
 ```tcl
-lappend auto_path /path/to/vmd-mdance-plugin/vmdance
+lappend auto_path /path/to/vmdance/vmdance   ;# the plugin: the vmdance folder of the clone
 package require vmdance   ;# adds the menu entry Analysis > VMDance
 ```
 
