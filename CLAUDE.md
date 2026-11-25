@@ -638,7 +638,9 @@ exports, the 3D drawing, the window with ten plots (thirteen since the
 groups), figures. Not carried
 over from the MDANCE plugin: its narrated demo, its installer. Only VMD 2.1
 on Linux has been tried. It took the MDANCE plugin's place in this
-repository on 2026-10-09 (GitHub: diegoenry/vmd-mdance-plugin).
+repository on 2026-10-09 (GitHub: diegoenry/vmd-mdance-plugin; since
+2026-11-24 AUcompbiophysics/vmdance, its docs on
+aucompbiophysics.github.io/vmdance, published by .github/workflows/docs.yml).
 
 Hardening 2 (branch hardening-2, 2026-10-09): a second round of reviews,
 fixed in thirteen groups, each kept by a suite of its own

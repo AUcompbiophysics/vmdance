@@ -13,6 +13,8 @@ look, and the window's numbers.**
   the viewer does not choose the dark copy by its theme.
 - These pages are published from AUcompbiophysics/vmdance:
   aucompbiophysics.github.io/vmdance.
+- The install steps name the clone's folder, ``vmdance`` (they named the
+  old repository's, ``vmd-mdance-plugin``).
 - The new logo: a mark of nine tiles, and "vmdance" with v, m and d in
   red, green and blue. A wordmark and a stacked logo, each for a light and
   a dark background; the mark is the favicon and the window's icon.
