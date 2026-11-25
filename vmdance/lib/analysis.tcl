@@ -49,6 +49,8 @@ namespace eval ::VMDance::Job {
     variable lib_of ""                 ;# the extraction they are of
     variable lib_data ""               ;# API 2: the job's coordinates as the library's dataset (_call_v2)
     variable scanned {}                ;# API 2: an elbow scan's answers made at once ({k metric params} -> {ok answer}: _scan_v2)
+    variable scan_whole 24             ;# API 2: an elbow of more values is scanned in chunks of the smallest first (_do_elbow)
+    variable scan_chunk 16             ;#   of this many values
     variable lib2_peak 40              ;# API 2: bytes a coordinate at a call's peak (the dataset and the algorithms' copies)
     # what a clustering request holds, and its defaults
     variable input_defaults {mol top sel "name CA" first 0 last -1 step 1 fit ""}
@@ -1269,7 +1271,27 @@ proc ::VMDance::Job::_do_elbow {req} {
             lappend run $k
         }
         if {[llength $run] > 1} {
-            if {[_scan_v2 $c $req $run $initial $lo $hi]} {
+            # (the library runs a scan's largest values first, which keeps its
+            # threads busy to the end, so a scan cancelled keeps its largest:
+            # a long elbow is scanned in chunks of the smallest values first,
+            # and a cancel keeps the low end, the part of an elbow that is read)
+            variable scan_whole; variable scan_chunk
+            set chunks [list $run]
+            if {[llength $run] > $scan_whole} {
+                set chunks {}
+                for {set f 0} {$f < [llength $run]} {incr f $scan_chunk} {
+                    lappend chunks [lrange $run $f [expr {$f + $scan_chunk - 1}]]
+                }
+            }
+            set stop 0
+            set done 0
+            foreach chunk $chunks {
+                set a0 [expr {$lo + ($hi - $lo) * $done / [llength $run]}]
+                incr done [llength $chunk]
+                set b0 [expr {$lo + ($hi - $lo) * $done / [llength $run]}]
+                if {[_scan_v2 $c $req $chunk $initial $a0 $b0]} { set stop 1; break }
+            }
+            if {$stop} {
                 # (cancelled: the values it made are kept, as a scan
                 # cancelled one value after another keeps those before)
                 variable scanned

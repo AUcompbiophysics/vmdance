@@ -493,7 +493,11 @@ and Molywood Studio. docs/design.rst and docs/internals.rst describe it.
   the loop reads them from `scanned` (keyed {k metric params}) through
   Job::_cluster, whose checks after a call, records and "not run" are
   unchanged. A scan cancelled answers with the values it made (the others
-  "cancelled"), kept as Job::partial.
+  "cancelled"), kept as Job::partial. The library runs the largest values
+  first, so an elbow of more than `scan_whole` (24) values is scanned in
+  chunks of `scan_chunk` (16), the smallest first: a Cancel keeps the low
+  end (it kept k 185 to 200 of 2 to 200 in the first test drive in VMD,
+  2026-11-25).
 - CPP-MDANCE's main since PR #61 (3a2f073) seeds k-means' KmeansPP and
   Random from the clock (it was a fixed seed): two runs, and the program
   and the library, give different labels. A comparison of labels between

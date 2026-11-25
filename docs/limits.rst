@@ -12,6 +12,8 @@ MDANCE's part.
   the program, or the library v2, for long trajectories. The library v2
   makes an elbow scan's values of k at once, on its threads (tau's 6001
   frames of 99 atoms, k from 2 to 20: 6.5 s, 12.5 s one value at a time).
+  A Cancel keeps the values made; an elbow of more than 24 values is
+  scanned 16 at a time from the smallest, so those are the low ones.
 - A clustering writes every frame's coordinates to a file in the plugin's
   private folder: 3 × atoms numbers per frame. This is the program's
   input, written with the library too, and it is kept for the questions

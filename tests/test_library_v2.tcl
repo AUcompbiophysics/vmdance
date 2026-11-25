@@ -182,6 +182,30 @@ check "PRIME, the similarity and a pick: the program's answers (the similarity t
     set ::cancel_at ""
     check "  during an elbow's scan: the job ends cancelled, the elbow not replaced, the library holds nothing ($e)" [expr {
         [string match "*cancelled*" $e] && [v2_calls] eq {scan} && $eb eq $::VMDance::Results::elbow && [v2_clean]}]
+    # (a long elbow is scanned in chunks of its smallest values first: the
+    # library runs a scan's largest values first, and a cancel kept those,
+    # k 185 to 200 of 2 to 200; here a chunk is 3 values past 4)
+    set w $::VMDance::Job::scan_whole; set ch $::VMDance::Job::scan_chunk
+    set ::VMDance::Job::scan_whole 100
+    vmdance elbow -mol $m -sel all -ks {2 3 4 5 6 7 8 9} -kinit StratAll -percentage 50 -quiet 1
+    set one [v2_labels]
+    set ::VMDance::Job::scan_whole 4; set ::VMDance::Job::scan_chunk 3
+    v2_reset
+    vmdance elbow -mol $m -sel all -ks {2 3 4 5 6 7 8 9} -kinit StratAll -percentage 50 -quiet 1
+    check "a long elbow: scanned in chunks of the smallest values first ([lmap s $::starts {lindex $s 2}]), one dataset" [expr {
+        [v2_calls] eq {scan scan scan} && $::made == 1 && [lmap s $::starts {lindex $s 2}] eq [list             "KMeans NANI, k = 2, 3, 4, in the library at once" "KMeans NANI, k = 5, 6, 7, in the library at once"             "KMeans NANI, k = 8, 9, in the library at once"]}]
+    check "  the labels of one scan of them all" [expr {[llength $one] == 8 && $one eq [v2_labels]}]
+    set eb $::VMDance::Results::elbow
+    v2_reset
+    set ::cancel_at 2
+    set e [err {vmdance elbow -mol $m -sel all -ks {2 3 4 5 6 7 8 9} -kinit StratAll -percentage 50 -quiet 1}]
+    set ::cancel_at ""
+    set ::VMDance::Job::scan_whole $w; set ::VMDance::Job::scan_chunk $ch
+    set kept [lmap r [::VMDance::_get $::VMDance::Job::partial records {}] {dict get $r k}]
+    # (the second chunk can end before the cancel is read: its values are kept too)
+    check "  cancelled in its second chunk: the smallest values are kept ($kept), the third never run, the elbow not replaced, the library holds nothing" [expr {
+        [string match "*cancelled*" $e] && [v2_calls] eq {scan scan} && $kept in {{2 3 4} {2 3 4 5 6 7}} &&
+        $eb eq $::VMDance::Results::elbow && [v2_clean]}]
     v2_reset
     set ::fail_at 1
     set e [err {vmdance -mol $m -sel all -k 3 -kinit StratAll -percentage 50 -quiet 1}]

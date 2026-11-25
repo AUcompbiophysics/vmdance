@@ -365,6 +365,8 @@ so that no core is dumped.
        - the program's labels (k-means, HELM, DIVINE, eQual), and PRIME's,
          the similarity's and a pick's answers, on the same coordinates
        - a Cancel during a call, a scan's too, and a call that fails
+       - a long elbow scanned in chunks of its smallest values first, with
+         one scan's labels; cancelled, its smallest values kept
        - the memory a call needs (where the system says what is free)
    * - ``test_hardening2_h4``
      - the exports and the stated requirements:

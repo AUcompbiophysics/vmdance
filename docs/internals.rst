@@ -232,7 +232,13 @@ A library of CPP-MDANCE's second interface (``::mdance::info`` says API
   answer, or error, from there: the checks after a call, the records, the
   scores and the "not run" values are the same. Cancelled, the values the
   scan made are kept as the partial scan, as those before a Cancel are with
-  one call a value. An elbow with ``-stability`` (its other seedings are
+  one call a value. The library runs a scan's largest values first, which
+  keeps its threads busy to the end, so a cancelled scan kept its largest:
+  k 185 to 200 of 2 to 200. An elbow of more than 24 values
+  (``Job::scan_whole``) is scanned in chunks of 16 (``scan_chunk``), the
+  smallest first: a Cancel keeps the low end, the part of an elbow that is
+  read. The chunks cost 5–9% (tau's heavy atoms, k from 2 to 40: 13.1 s,
+  12.6 s as one scan). An elbow with ``-stability`` (its other seedings are
   called at each k) and eQual's radii keep one call a value.
 
 tests/test_library_v2.tcl tests this path; tests/test_hardening2_h3.tcl
