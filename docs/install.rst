@@ -3,8 +3,8 @@ Install
 
 .. note::
 
-   Once VMDance and CPP-MDANCE have been through peer review, they will be
-   distributed with VMD 2.x. Until then, you install them yourself.
+   VMDance and CPP-MDANCE will be shipped with VMD 2.1 after the VMDance
+   plugin is peer reviewed. Until then, you install them yourself.
 
 VMDance is two things:
 

@@ -430,7 +430,7 @@ Where each part of the plugin, its tests and its documentation is::
      profile/             profile_core.tcl, profile_gui.tcl: each procedure's calls and time (prof.tcl; reports in tests/out/profile)
    docs/                  Sphinx documentation: quick start, a complete analysis, every pane and plot, choosing k,
                           groups, the command and recipes, files, the algorithms and parameters, the design
-     _static/logo/        the logo: the wordmark and the stacked logo (light and dark backgrounds) and its mark, SVG and PNG
+     _static/logo/        the logo: the wordmark and the stacked logo (light and dark backgrounds), the wordmark on a white card (the README's fallback) and its mark, SVG and PNG
      _static/mdance/      MDANCE's logo and its algorithms' (from MDANCE's repository, MIT)
      _static/figures/     the screenshots; _static/diagrams/: the diagrams (SVG and PNG)
      diagrams/            the flows' Graphviz sources

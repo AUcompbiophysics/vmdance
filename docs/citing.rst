@@ -55,7 +55,7 @@ The software
 - **VMD** — W. Humphrey, A. Dalke, K. Schulten. VMD: Visual Molecular
   Dynamics. *J. Mol. Graphics* **1996**, 14, 33–38.
   https://doi.org/10.1016/0263-7855(96)00018-5
-- **VMDance** — https://github.com/diegoenry/vmd-mdance-plugin (an
+- **VMDance** — https://github.com/AUcompbiophysics/vmdance (an
   application note is in preparation).
 
 The scores

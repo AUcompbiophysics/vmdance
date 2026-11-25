@@ -142,7 +142,9 @@ and Molywood Studio. docs/design.rst and docs/internals.rst describe it.
   green and blue, "ance" navy #0e1328). `python3 docs/tools/make_logo.py`
   (Pillow only; it draws the outlines, no cairo) makes the rest from them:
   the dark copies ("ance" light), the mark (the tiles, on a square: the
-  docs' favicon), the PNGs and the application's icon (app_*). MDANCE's
+  docs' favicon), the wordmark on a white card (vmdance_card.svg: the
+  README's fallback, for a viewer that does not choose the dark copy by its
+  theme), the PNGs and the application's icon (app_*). MDANCE's
   logo and its algorithms' (docs/_static/mdance/) are copied from MDANCE's
   repository (docs/_static, docs/img/algorithms; MIT); make_logo.py makes
   from them the logo Setup shows beside its chooser (vmdance/icons/algo_*,

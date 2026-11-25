@@ -1,5 +1,5 @@
 # Builds the documentation (docs/) with Sphinx, warnings as errors, and
-# publishes it on GitHub Pages: https://diegoenry.github.io/vmd-mdance-plugin/
+# publishes it on GitHub Pages: https://aucompbiophysics.github.io/vmdance/
 # A pull request builds it only, to show that it still builds.
 name: Docs
 
