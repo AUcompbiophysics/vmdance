@@ -5,6 +5,22 @@ The clustering is MDANCE's, as its C++ port CPP-MDANCE runs it. The plugin
 passes the coordinates and the parameters, and reads the answer. Every
 parameter, with its default and limits, is on :doc:`parameters`.
 
+.. image:: _static/mdance/mdance.png
+   :alt: MDANCE
+   :width: 240px
+   :class: only-light
+   :target: https://mdance.readthedocs.io/en/latest/index.html
+
+.. image:: _static/mdance/mdance_dark.png
+   :alt: MDANCE
+   :width: 240px
+   :class: only-dark
+   :target: https://mdance.readthedocs.io/en/latest/index.html
+
+To learn more about the algorithms, read
+`MDANCE's documentation <https://mdance.readthedocs.io/en/latest/index.html>`_.
+It is a different website: the page asks before it sends you there.
+
 .. figure:: _static/diagrams/algorithms.svg
    :alt: The same frames clustered by KMeans NANI, DIVINE, HELM and eQual.
    :width: 100%
@@ -18,25 +34,34 @@ parameter, with its default and limits, is on :doc:`parameters`.
 .. list-table::
    :header-rows: 1
    :widths: 16 34 26 24
+   :class: algo-table
 
    * - Algorithm
      - What it does
      - You give
      - Good for
-   * - KMeans NANI
+   * - |nani|
+
+       KMeans NANI
      - k-means, its seeds drawn from the densest frames (or k-means++,
        random)
      - k, the seeding
      - a first look; most trajectories; the stability scan
-   * - DIVINE
+   * - |divine|
+
+       DIVINE
      - splits the frames in two, then the loosest cluster, until k
      - k, the split, the anchors, a smallest share
      - a hierarchy from the top; clusters of very different sizes
-   * - HELM
+   * - |helm|
+
+       HELM
      - many small NANI clusters, merged two by two until k (or a distance)
      - k or ``-eps``, the first clustering, a trim
      - a hierarchy from the bottom; the merges' heights
-   * - eQual
+   * - |equal|
+
+       eQual
      - clusters within a radius of their seeds; the rest noise
      - the radius (no k)
      - dense states among sparse frames; a k it finds itself
@@ -106,6 +131,11 @@ plugin refuses those, and says what to use instead.
 KMeans NANI
 -----------
 
+.. image:: _static/mdance/nani.png
+   :alt: NANI's logo (MDANCE's)
+   :width: 96px
+   :align: right
+
 k-means with *N-ary natural initiation*. The k seeds are chosen by
 MDANCE's extended similarity:
 
@@ -127,8 +157,16 @@ first k (50 frames at 10%: 24.5, at k 3 or more), the seeds and the
 clusters differ from MDANCE's. On 3ptb's Cα, frames 0–49, k 4: 19 11 10 10
 frames against 25 11 10 4. The reference suite records it.
 
+MDANCE's tutorial, on its website:
+`NANI <https://mdance.readthedocs.io/en/latest/tutorials/nani.html>`_.
+
 DIVINE
 ------
+
+.. image:: _static/mdance/divine.png
+   :alt: DIVINE's logo (MDANCE's)
+   :width: 96px
+   :align: right
 
 Divisive: the whole trajectory is split in two, then the cluster chosen by
 ``-split`` (the largest weighted MSD, the largest MSD, the widest), until
@@ -204,6 +242,11 @@ them. CPP-MDANCE builds DIVINE when its tree has it (``BUILD_DIVINE``).
 HELM
 ----
 
+.. image:: _static/mdance/helm.png
+   :alt: HELM's logo (MDANCE's)
+   :width: 96px
+   :align: right
+
 Agglomerative: HELM starts from many small clusters. They are either:
 
 - those of a first NANI clustering (``-initial`` 50 of them, seeded
@@ -233,8 +276,16 @@ computes. What it left is counted once HELM has run, and refused so too.
 
 HELM's merges make the Tree plot: a forest when it stops at k.
 
+MDANCE's tutorial, on its website:
+`HELM <https://mdance.readthedocs.io/en/latest/tutorials/helm.html>`_.
+
 eQual
 -----
+
+.. image:: _static/mdance/equal.png
+   :alt: eQual's logo (MDANCE's)
+   :width: 96px
+   :align: right
 
 Extended quality: a cluster grows from a seed and takes the frames within
 ``-threshold`` of it. The seed is the medoid of what is left, or the
@@ -261,6 +312,9 @@ Optionally:
 Which radius to try depends on the frames. ``vmdance radii`` (Setup's
 *Suggest a radius*) measures the distances between about 150 of them and
 proposes a range (:doc:`scans`).
+
+MDANCE's tutorial, on its website:
+`eQual <https://mdance.readthedocs.io/en/latest/tutorials/equal.html>`_.
 
 What comes back
 ---------------
@@ -339,3 +393,16 @@ From the labels alone:
   seen at (``vmdance timeline``);
 - with groups, how unlike their shares of the clusters are
   (:doc:`groups`).
+
+.. |nani| image:: _static/mdance/nani.png
+   :alt: NANI's logo
+   :width: 60px
+.. |divine| image:: _static/mdance/divine.png
+   :alt: DIVINE's logo
+   :width: 60px
+.. |helm| image:: _static/mdance/helm.png
+   :alt: HELM's logo
+   :width: 60px
+.. |equal| image:: _static/mdance/equal.png
+   :alt: eQual's logo
+   :width: 60px

@@ -102,6 +102,7 @@ namespace eval ::VMDance::GUI {
     variable panels {}         ;# the left panel and the plot options as last arranged (_panels_room)
     variable tables {}         ;# table -> {the column that fills, {column width ...}} (_table_fit)
     variable tbicons {}        ;# toolbar button -> its icon (_toolbar_icons)
+    variable logo_have 1       ;# whether the backend has the algorithm whose logo Setup shows (_algo_logo)
     variable press {}
     variable frame_names {all "All frames" range "Frames"}
     variable sel_presets {
@@ -294,6 +295,7 @@ proc ::VMDance::GUI::apply_appearance {{first 0}} {
     if {$first} { _sash_stops }
     _toolbar_icons
     _tab_icons
+    _algo_logo
     _tree_columns
     set lh [font metrics MdvUISmall -linespace]
     $w.sb configure -height [expr {$lh + 8}]
@@ -1224,15 +1226,19 @@ proc ::VMDance::GUI::_build_setup {P} {
     pack ${A}_sec -side top -fill x -pady {6 0}
     set names {}
     foreach a [::VMDance::Algo::all] { lappend names $a [::VMDance::Algo::label $a] }
+    # (the chosen algorithm's logo, MDANCE's, beside the chooser: _algo_logo.
+    # The description's style: it draws no background, so the box's shows)
+    ttk::label $A.logo -style Muted.TLabel
+    grid $A.logo -row 0 -column 0 -sticky w -padx {0 6}
     _combo $A.c ${V}(algorithm) $names ::VMDance::GUI::_algorithm_changed
     # (the backend asked again as it opens: a program rebuilt meanwhile)
     $A.c configure -postcommand {::VMDance::GUI::_availability 1}
-    grid $A.c -row 0 -column 0 -sticky w
+    grid $A.c -row 0 -column 1 -sticky w
     ttk::label $A.about -style Muted.TLabel -wraplength 280 -justify left
-    grid $A.about -row 1 -column 0 -sticky w -pady {2 0}
+    grid $A.about -row 1 -column 0 -columnspan 2 -sticky w -pady {2 0}
     ttk::label $A.na -textvariable ${V}(unavailable) -style Read.TLabel -wraplength 280 -justify left
-    grid $A.na -row 2 -column 0 -sticky w
-    grid columnconfigure $A 0 -weight 1
+    grid $A.na -row 2 -column 0 -columnspan 2 -sticky w
+    grid columnconfigure $A 1 -weight 1
 
     set B [_section $P.par "Parameters" -padding {6 4}]
     pack ${B}_sec -side top -fill x -pady {6 0}
@@ -1426,6 +1432,7 @@ proc ::VMDance::GUI::_availability {{again 0}} {
     set have {}
     if {[catch {::VMDance::Backend::algorithms} have]} {
         set S(unavailable) "No backend: [lindex [split $have \n] 0]. Settings ▸ Backend."
+        _algo_logo 1
         return
     }
     if {$again && [llength $have] < [llength [::VMDance::Algo::all]]} { catch {set have [::VMDance::Backend::algorithms 1]} }
@@ -1442,6 +1449,7 @@ proc ::VMDance::GUI::_availability {{again 0}} {
     }
     _grid_count
     set miss [lmap a [::VMDance::Algo::all] {expr {$a in $have ? [continue] : [::VMDance::Algo::label $a]}}]
+    _algo_logo [expr {$S(algorithm) in $have}]
     if {$S(algorithm) ni $have} {
         set S(unavailable) "[::VMDance::Algo::label $S(algorithm)] is not in this build of the backend (CPP-MDANCE builds DIVINE only with BUILD_DIVINE)."
     } elseif {[llength $miss]} {
@@ -1454,6 +1462,23 @@ proc ::VMDance::GUI::_availability {{again 0}} {
     if {[_in_library]} {
         set S(unavailable) [string trim "$S(unavailable) The library clusters, in VMD, which does not respond during a clustering[expr {[dict get [::VMDance::Backend::settings] -mode] eq "auto" ? " (Automatic found no mdance-cli: Settings ▸ Backend)" : ""}]."]
     }
+}
+# The chosen algorithm's logo (MDANCE's) beside Setup's chooser, at the
+# toolbar's icon size (icon_sizes); dimmed when the backend in use does not
+# have the algorithm, as the note under it says. have: 1 or 0, as
+# _availability found it; "" (the text or icon size changed) keeps the last.
+# (A logo file missing: no image, the chooser alone.)
+proc ::VMDance::GUI::_algo_logo {{have ""}} {
+    variable S; variable page; variable logo_have
+    if {$have ne ""} { set logo_have $have }
+    if {![info exists page(setup)] || ![winfo exists $page(setup).alg.logo]} return
+    set sz [lindex [icon_sizes] 0]
+    if {$logo_have} {
+        set img [::VMDance::Icons::get algo_$S(algorithm) $sz]
+    } else {
+        set img [::VMDance::Icons::dim algo_$S(algorithm) $sz]
+    }
+    $page(setup).alg.logo configure -image $img
 }
 # Whether the backend in use is the library (VMD waits for each of its
 # calls).

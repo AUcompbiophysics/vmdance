@@ -9,3 +9,47 @@ figure img[src*="figures/"] {
     border: 1px solid rgba(128, 128, 128, 0.25);
     border-radius: 3px;
 }
+
+/* MDANCE's documentation's look (its custom.css): semibold headings, the
+   logo in the top bar on narrow screens, the algorithms' table centred on
+   its logos */
+h1, h2, h3, h4 {
+    font-weight: 600;
+    letter-spacing: -0.015em;
+}
+
+.mobile-header {
+    box-shadow: none;
+    border-bottom: 1px solid var(--color-background-border);
+}
+
+.mobile-header .header-center a {
+    display: block;
+    width: 130px;
+    height: 28px;
+    background: url("logo/vmdance.svg") center / contain no-repeat;
+}
+
+.mobile-header .header-center .brand {
+    display: none;
+}
+
+body[data-theme="dark"] .mobile-header .header-center a {
+    background-image: url("logo/vmdance_dark.svg");
+}
+
+@media (prefers-color-scheme: dark) {
+    body[data-theme="auto"] .mobile-header .header-center a {
+        background-image: url("logo/vmdance_dark.svg");
+    }
+}
+
+table.algo-table th:first-child,
+table.algo-table td:first-child {
+    text-align: center;
+    vertical-align: middle;
+}
+
+table.algo-table td:first-child p {
+    margin: 0.25rem 0;
+}

@@ -395,7 +395,7 @@ Where each part of the plugin, its tests and its documentation is::
      lib/gui.tcl          main window: menus, toolbar, the Setup, Results, Scans, Tools and 3D tabs, running jobs
      lib/gui_opts.tcl     the Plot options panel; showing and hiding the side panels
      lib/gui_io.tcl       sessions, import, export, figures and render dialogs
-     icons/               icon PNGs; make_icons.py draws them (the application's, app_*: docs/tools/make_logo.py)
+     icons/               icon PNGs; make_icons.py draws them (the application's, app_*, and the algorithms' logos, algo_*: docs/tools/make_logo.py)
    tests/
      common.tcl           shared: paths, the systems, the backends, check
      fake_mdance_cli      a deterministic stand-in for mdance-cli, with hooks for failures
@@ -430,11 +430,12 @@ Where each part of the plugin, its tests and its documentation is::
      profile/             profile_core.tcl, profile_gui.tcl: each procedure's calls and time (prof.tcl; reports in tests/out/profile)
    docs/                  Sphinx documentation: quick start, a complete analysis, every pane and plot, choosing k,
                           groups, the command and recipes, files, the algorithms and parameters, the design
-     _static/logo/        the logo: the wordmark (light and dark backgrounds) and its mark, SVG and PNG
+     _static/logo/        the logo: the wordmark and the stacked logo (light and dark backgrounds) and its mark, SVG and PNG
+     _static/mdance/      MDANCE's logo and its algorithms' (from MDANCE's repository, MIT)
      _static/figures/     the screenshots; _static/diagrams/: the diagrams (SVG and PNG)
      diagrams/            the flows' Graphviz sources
      _static/data/        the tutorial's numbers (tutorial_numbers.txt)
-     tools/make_logo.py   draws the logo, and the window's icon
+     tools/make_logo.py   makes the logo's dark copies, its mark, the PNGs and the window's icon, from the design's SVGs
      tools/capture.tcl    takes the screenshots (MDANCE's tau peptide); annotate.py numbers the window's parts
      tools/capture_win.ps1  a window's picture on Windows, for capture.tcl
      tools/make_diagrams.py  draws the diagrams (matplotlib, and dot for the flows)

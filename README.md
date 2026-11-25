@@ -8,7 +8,8 @@
 # VMDance — MDANCE clustering of a trajectory, in VMD
 
 VMD and MDANCE share their MD, molecular dynamics. VMDance is the two in
-one: its logo spells VMD in the colours of VMD's own title.
+one: its logo spells VMD in red, green and blue, as VMD colours its own
+title.
 
 VMDance is a VMD Tcl/Tk plugin. It clusters the frames of a trajectory
 with the algorithms of [MDANCE](https://github.com/mqcomplab/MDANCE):

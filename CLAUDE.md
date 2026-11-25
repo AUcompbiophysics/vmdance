@@ -136,13 +136,19 @@ and Molywood Studio. docs/design.rst and docs/internals.rst describe it.
   PrintWindow asks the window to draw itself and needs Tk's event loop
   running; a handler waiting in that loop stalled the capture.
 - Icons: `cd vmdance/icons && python3 make_icons.py` (Pillow). The logo
-  (docs/_static/logo/) and the application's icon (app_*), from
-  `python3 docs/tools/make_logo.py` (fontTools, uharfbuzz, Pillow and the
-  Inter font; its PNGs drawn with Pillow, no cairo): VMDance with V, M and
-  D in VMD's own title colours (#da5050, #50da50, #5050da: the front faces
-  of the letters VMD draws at start, VMDTITLE=on) and "ance" in black
-  (light on dark); the mark and window icon, VMD in those colours on a
-  black tile, as VMD shows its title.
+  (docs/_static/logo/) is the design's two SVGs, vmdance.svg (the
+  wordmark) and vmdance_stacked.svg, for a light background (since
+  2026-11-24: a mark of nine tiles, and "vmdance" with v, m and d in red,
+  green and blue, "ance" navy #0e1328). `python3 docs/tools/make_logo.py`
+  (Pillow only; it draws the outlines, no cairo) makes the rest from them:
+  the dark copies ("ance" light), the mark (the tiles, on a square: the
+  docs' favicon), the PNGs and the application's icon (app_*). MDANCE's
+  logo and its algorithms' (docs/_static/mdance/) are copied from MDANCE's
+  repository (docs/_static, docs/img/algorithms; MIT); make_logo.py makes
+  from them the logo Setup shows beside its chooser (vmdance/icons/algo_*,
+  24 and 32 px tall: the toolbar's icon sizes; GUI::_algo_logo). The docs
+  take MDANCE's documentation's look (its Furo colours and fonts, in
+  conf.py; its custom.css's headings and narrow-screen logo).
 - Old-plugin session fixtures (tests/fixtures/old_*.mdance) were written by
   the MDANCE plugin itself (its run_clustering, run_one_config and
   save_session, its files read only) with the real mdance-cli:
