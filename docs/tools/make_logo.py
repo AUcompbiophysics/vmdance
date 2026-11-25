@@ -1,25 +1,29 @@
 #!/usr/bin/env python3
-"""Draw VMDance's logo: the wordmark, its mark, and the window's icon.
+"""Make VMDance's logos from the design's two SVGs: the wordmark
+(docs/_static/logo/vmdance.svg) and the stacked logo (vmdance_stacked.svg),
+both for a light background. They hold outlines, not text: they need no
+font to show.
 
-VMD and MDANCE share their MD (molecular dynamics). The wordmark spells
-VMDance with VMD in the colours of VMD's own title (V red, M green, D
-blue, as VMD draws it at start) and "ance" in black (light on a dark
-background). The mark is VMD in those colours on a black tile, as VMD
-shows its title; it is the window's icon too.
+The logo is a mark of nine tiles and "vmdance" with v, m and d in red, green
+and blue (VMD's three letters, as VMD's title is coloured) and "ance" in
+navy. This script writes, in docs/_static/logo/:
 
-Writes docs/_static/logo/ (vmdance.svg and vmdance_dark.svg, the wordmark
-for light and dark backgrounds; vmdance_mark.svg; PNGs of each) and the
-icons vmdance/icons/app_{16,24,32}.png with their dimmed copies. The SVGs
-hold outlines, not text: they need no font to show. The PNGs are drawn
-from the same outlines with Pillow (no cairo needed).
+- vmdance_dark.svg and vmdance_stacked_dark.svg: the same for a dark
+  background ("ance" light);
+- vmdance_mark.svg: the tiles alone, on a square;
+- PNGs of each (the docs' favicon is vmdance_mark_64.png; the quick-start
+  guide's title page is vmdance_stacked.png);
+
+and the window's icon, vmdance/icons/app_{16,24,32}.png with their dimmed
+copies. The PNGs are drawn from the outlines with Pillow (no cairo needed).
+
+It also makes the logo of each algorithm shown beside Setup's chooser,
+vmdance/icons/algo_<algorithm>_{24,32}.png (24 and 32 px tall, the toolbar's
+icon sizes) and their dimmed copies, from MDANCE's logos in
+docs/_static/mdance/.
 
     python3 docs/tools/make_logo.py      (from the repository's root)
-
-Requires fontTools, uharfbuzz and Pillow, and the Inter font (SIL Open
-Font License; Debian/Ubuntu: fonts-inter), or INTER_DIR set to the folder
-of its .otf files.
 """
-import os
 import re
 from pathlib import Path
 
@@ -27,83 +31,55 @@ from PIL import Image, ImageChops, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[2]
 LOGO = ROOT / "docs" / "_static" / "logo"
+MDANCE = ROOT / "docs" / "_static" / "mdance"
 ICONS = ROOT / "vmdance" / "icons"
-INTER = Path(os.environ.get("INTER_DIR", "/usr/share/fonts/opentype/inter"))
+# the plugin's algorithms, and MDANCE's logo of each
+ALGORITHMS = {"kmeans": "nani", "divine": "divine", "helm": "helm", "equal": "equal"}
 
-# VMD's title colours (the front faces of its V, M and D), and the ink of
-# "ance" on a light and on a dark background
-VMD = ("#da5050", "#50da50", "#5050da")
-LIGHT = dict(vmd=VMD, ance="#000000")
-DARK = dict(vmd=VMD, ance="#f2f2f2")
-TILE = "#000000"
+# the ink of "ance", and what it is on a dark background
+NAVY, LIGHT = "#0e1328", "#f2f2f2"
 
 
-def shape(text, font, size):
-    """text's glyphs at size px per em, kerned: [(svg path, left, right)],
-    with the font's cap height in px. Baseline at y = 0, y downwards."""
-    import uharfbuzz as hb
-    from fontTools.pens.boundsPen import BoundsPen
-    from fontTools.pens.svgPathPen import SVGPathPen
-    from fontTools.pens.transformPen import TransformPen
-    from fontTools.ttLib import TTFont
-    path = str(INTER / font)
-    face = hb.Face(hb.Blob.from_file_path(path))
-    buf = hb.Buffer()
-    buf.add_str(text)
-    buf.guess_segment_properties()
-    hb.shape(hb.Font(face), buf, {"kern": True, "liga": False})
-    tt = TTFont(path)
-    glyphs, order = tt.getGlyphSet(), tt.getGlyphOrder()
-    s = size / tt["head"].unitsPerEm
-    out, x = [], 0.0
-    for info, pos in zip(buf.glyph_infos, buf.glyph_positions):
-        g = glyphs[order[info.codepoint]]
-        pen = SVGPathPen(glyphs)
-        g.draw(TransformPen(pen, (s, 0, 0, -s, x + pos.x_offset * s, -pos.y_offset * s)))
-        box = BoundsPen(glyphs)
-        g.draw(box)
-        x0, _, x1, _ = box.bounds or (0, 0, 0, 0)
-        out.append((pen.getCommands(), x + x0 * s, x + x1 * s))
-        x += pos.x_advance * s
-    return out, tt["OS/2"].sCapHeight * s
+def read(name):
+    """An SVG of the design: its width, height and paths [(fill, d)]."""
+    text = (LOGO / name).read_text()
+    _, _, w, h = (float(v) for v in re.search(r'viewBox="([^"]+)"', text).group(1).split())
+    paths = re.findall(r'<path fill="(#[0-9a-fA-F]{6})" d="([^"]+)"\s*/>', text)
+    if not paths:
+        raise ValueError(f"{name}: no paths read")
+    return w, h, paths
 
 
-# A drawing is a list of items, written as SVG and drawn as PNG alike:
-#   ("rect", x, y, w, h, rx, fill)      a rectangle, its corners' radius rx
-#   ("path", d, tx, ty, fill)           an outline translated by (tx, ty)
-def svg(w, h, items, title):
-    body = []
-    for it in items:
-        if it[0] == "rect":
-            _, x, y, rw, rh, rx, fill = it
-            r = f' rx="{rx:.2f}"' if rx else ""
-            body.append(f'<rect x="{x:.2f}" y="{y:.2f}" width="{rw:.2f}" height="{rh:.2f}"{r} fill="{fill}"/>')
-        else:
-            _, d, tx, ty, fill = it
-            body.append(f'<path d="{d}" fill="{fill}" transform="translate({tx:.2f},{ty:.2f})"/>')
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w:.2f} {h:.2f}" '
-            f'width="{w:.2f}" height="{h:.2f}" role="img" aria-label="{title}">'
-            f'<title>{title}</title>{"".join(body)}</svg>\n')
+def bounds(paths):
+    pts = [p for _, d in paths for c in _contours(d) for p in c]
+    return min(x for x, _ in pts), min(y for _, y in pts), max(x for x, _ in pts), max(y for _, y in pts)
 
 
-def wordmark(pal):
-    """VMDance: V, M and D in VMD's colours, "ance" in the ink."""
-    g, cap = shape("VMDance", "Inter-Bold.otf", 200.0)
-    pad = cap * 0.30
-    ox, base = pad - g[0][1], pad + cap
-    colours = list(pal["vmd"]) + [pal["ance"]] * 4
-    items = [("path", d, ox, base, c) for (d, _, _), c in zip(g, colours)]
-    # (below the baseline, the round letters' overshoot)
-    return g[-1][2] + ox + pad, base + cap * 0.02 + pad, items
+def svg(box, paths, title="VMDance"):
+    x, y, w, h = box
+    body = "".join(f'<path fill="{f}" d="{d}"/>\n' for f, d in paths)
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{x:g} {y:g} {w:g} {h:g}" '
+            f'width="{w:g}" height="{h:g}">\n<title>{title}</title>\n{body}</svg>\n')
 
 
-def mark(n=256):
-    """VMD in VMD's colours on a black tile, as VMD shows its title."""
-    g, cap = shape("VMD", "Inter-Bold.otf", n * 0.34)
-    ox = (n - (g[-1][2] - g[0][1])) / 2 - g[0][1]
-    items = [("rect", 0, 0, n, n, n * 0.20, TILE)]
-    items += [("path", d, ox, n / 2 + cap / 2, c) for (d, _, _), c in zip(g, VMD)]
-    return n, n, items
+def dark(paths):
+    return [(LIGHT if f.lower() == NAVY else f, d) for f, d in paths]
+
+
+def mark(paths):
+    """The tiles, and a square about them: in the wordmark, the paths before
+    the first gap from left to right (the letters come after it)."""
+    spans = sorted((bounds([p]), p) for p in paths)
+    tiles, right = [], None
+    for (x0, _, x1, _), p in spans:
+        if right is not None and x0 > right:
+            break
+        tiles.append(p)
+        right = x1 if right is None else max(right, x1)
+    x0, y0, x1, y1 = bounds(tiles)
+    side = max(x1 - x0, y1 - y0) * 1.04
+    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+    return (cx - side / 2, cy - side / 2, side, side), tiles
 
 
 def _contours(d):
@@ -156,27 +132,21 @@ def _contours(d):
     return out
 
 
-def png(drawing, width, height=None, ss=4):
-    """A drawing (w, h, items) as an RGBA image of width × height, drawn
-    ss times larger and reduced (antialiased); outlines filled even-odd
-    (a glyph's counters are holes)."""
-    w, h, items = drawing
+def png(box, paths, width, height=None, ss=4):
+    """Paths as an RGBA image width × height of the box (x, y, w, h), drawn
+    ss times larger and reduced (antialiased); each path filled even-odd
+    (a letter's counters are holes)."""
+    x, y, w, h = box
     height = height or round(width * h / w)
     W, H = width * ss, height * ss
     sx, sy = W / w, H / h
     im = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    for it in items:
+    for fill, d in paths:
         mask = Image.new("1", (W, H), 0)
-        if it[0] == "rect":
-            _, x, y, rw, rh, rx, fill = it
-            ImageDraw.Draw(mask).rounded_rectangle(
-                [x * sx, y * sy, (x + rw) * sx - 1, (y + rh) * sy - 1], radius=rx * sx, fill=1)
-        else:
-            _, d, tx, ty, fill = it
-            for c in _contours(d):
-                one = Image.new("1", (W, H), 0)
-                ImageDraw.Draw(one).polygon([((px + tx) * sx, (py + ty) * sy) for px, py in c], fill=1)
-                mask = ImageChops.logical_xor(mask, one)
+        for c in _contours(d):
+            one = Image.new("1", (W, H), 0)
+            ImageDraw.Draw(one).polygon([((px - x) * sx, (py - y) * sy) for px, py in c], fill=1)
+            mask = ImageChops.logical_xor(mask, one)
         layer = Image.new("RGBA", (W, H), fill)
         layer.putalpha(mask.convert("L"))
         im = Image.alpha_composite(im, layer)
@@ -191,21 +161,30 @@ def dimmed(im):
 
 
 def write_all():
-    LOGO.mkdir(parents=True, exist_ok=True)
-    for name, pal in (("vmdance", LIGHT), ("vmdance_dark", DARK)):
-        dr = wordmark(pal)
-        (LOGO / f"{name}.svg").write_text(svg(*dr, "VMDance"))
-        png(dr, 1200).save(LOGO / f"{name}.png", optimize=True)
-    dr = mark()
-    (LOGO / "vmdance_mark.svg").write_text(svg(*dr, "VMDance"))
+    for name, width in (("vmdance", 1200), ("vmdance_stacked", 800)):
+        w, h, paths = read(f"{name}.svg")
+        box = (0, 0, w, h)
+        (LOGO / f"{name}_dark.svg").write_text(svg(box, dark(paths)))
+        png(box, paths, width).save(LOGO / f"{name}.png", optimize=True)
+        png(box, dark(paths), width).save(LOGO / f"{name}_dark.png", optimize=True)
+    box, tiles = mark(read("vmdance.svg")[2])
+    (LOGO / "vmdance_mark.svg").write_text(svg(box, tiles))
     for px in (64, 128, 256, 512):
-        png(dr, px, px).save(LOGO / f"vmdance_mark_{px}.png", optimize=True)
-    # the icons: drawn 16 times larger and reduced, as the plugin's others
+        png(box, tiles, px, px).save(LOGO / f"vmdance_mark_{px}.png", optimize=True)
+    # the window's icon: drawn 16 times larger and reduced, as the plugin's
+    # other icons
     for px in (16, 24, 32):
-        im = png(dr, px * 16, px * 16).resize((px, px), Image.LANCZOS)
+        im = png(box, tiles, px * 16, px * 16).resize((px, px), Image.LANCZOS)
         im.save(ICONS / f"app_{px}.png")
         dimmed(im).save(ICONS / f"app_{px}_dim.png")
-    print("wrote", LOGO, "and", ICONS / "app_*.png")
+    # the algorithms' logos, by height (they are 3:2)
+    for key, name in ALGORITHMS.items():
+        src = Image.open(MDANCE / f"{name}.png").convert("RGBA")
+        for px in (24, 32):
+            im = src.resize((round(px * src.width / src.height), px), Image.LANCZOS)
+            im.save(ICONS / f"algo_{key}_{px}.png")
+            dimmed(im).save(ICONS / f"algo_{key}_{px}_dim.png")
+    print("wrote", LOGO, "and", ICONS / "app_*.png", ICONS / "algo_*.png")
 
 
 if __name__ == "__main__":

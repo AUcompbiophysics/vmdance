@@ -4,6 +4,30 @@ Changes
 1.0 alpha 1, as it grew
 -----------------------
 
+**24 November 2026: the new logo, MDANCE's logos, documentation and
+look, and the window's numbers.**
+
+- The new logo: a mark of nine tiles, and "vmdance" with v, m and d in
+  red, green and blue. A wordmark and a stacked logo, each for a light and
+  a dark background; the mark is the favicon and the window's icon.
+  ``make_logo.py`` makes the copies from the design's SVGs.
+- :doc:`algorithms` shows MDANCE's logo and each algorithm's (PRIME's on
+  :doc:`tools`), and points to MDANCE's documentation
+  (mdance.readthedocs.io) and its tutorials, to learn more about the
+  algorithms. It is a different website: the link asks before it leaves
+  these pages.
+- Setup: MDANCE's logo of the chosen algorithm beside the chooser, at the
+  toolbar's icon size, dimmed when the backend was built without it
+  (``vmdance/icons/algo_*``, made by ``make_logo.py``).
+- These pages take the look of MDANCE's documentation: its colours (navy
+  text and, in the dark theme, a navy background; pink and teal accents),
+  its fonts (Poppins, and JetBrains Mono for code), semibold headings, the
+  logo in the top bar on narrow screens, and a link to the repository at
+  the foot of every page.
+- The window's picture: its parts' numbers are in margins beside the
+  window, each joined to its part by a line. They covered the toolbar's
+  first button and the panes' tabs.
+
 **23 November 2026: the pages online.**
 
 - A workflow builds these pages and publishes them on GitHub Pages

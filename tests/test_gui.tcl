@@ -486,6 +486,29 @@ check "a backend without DIVINE: not offered, in Setup or the sweep" [expr {"DIV
 fake_env
 ${G}::backend_changed
 check "  with it again: offered" [expr {"DIVINE" in [$PS.alg.c cget -values] && [$PC.gr.alg.divine instate !disabled]}]
+# (the chosen algorithm's logo, MDANCE's, beside the chooser: it follows the
+# choice, at the toolbar's icon size, and is dimmed for an algorithm the
+# backend lacks, as the note under it says)
+set lg $PS.alg.logo
+set keep_alg [set ${S}(algorithm)]
+set sz [lindex [${G}::icon_sizes] 0]
+set ${S}(algorithm) helm
+${G}::_algorithm_changed
+set shown [$lg cget -image]
+fake_env MDANCE_FAKE_NO_DIVINE 1
+${G}::backend_changed
+set ${S}(algorithm) divine
+${G}::_algorithm_changed
+set dim [$lg cget -image]
+fake_env
+${G}::backend_changed
+set back [$lg cget -image]
+set ${S}(algorithm) $keep_alg
+${G}::_algorithm_changed
+check "the chosen algorithm's logo beside the chooser: HELM's; DIVINE's dimmed with a backend without it, whole with it" [expr {
+    $shown ne "" && $shown eq [::VMDance::Icons::get algo_helm $sz] && [image width $shown] == $sz * 3 / 2 &&
+    $dim ne "" && $dim ne $back && $dim eq [::VMDance::Icons::dim algo_divine $sz] &&
+    $back eq [::VMDance::Icons::get algo_divine $sz]}]
 # (h1 N24: a program rebuilt at its path with DIVINE, the window open: the
 # chooser asks again as it opens)
 set rb [file join $::out rebuilt-cli]

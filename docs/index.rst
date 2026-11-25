@@ -1,3 +1,15 @@
+.. image:: _static/logo/vmdance_stacked.svg
+   :alt: VMDance
+   :width: 280px
+   :align: center
+   :class: only-light
+
+.. image:: _static/logo/vmdance_stacked_dark.svg
+   :alt: VMDance
+   :width: 280px
+   :align: center
+   :class: only-dark
+
 VMDance
 =======
 

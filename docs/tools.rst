@@ -4,6 +4,11 @@ Tools
 PRIME
 -----
 
+.. image:: _static/mdance/prime.png
+   :alt: PRIME's logo (MDANCE's)
+   :width: 96px
+   :align: right
+
 PRIME predicts the representative, native-like frame of an ensemble from
 its clusters:
 
@@ -19,6 +24,9 @@ c0 trimmed. ``vmdance prime`` returns the seven as VMD frames. They are
 kept with the run and in sessions.
 
 PRIME needs a cluster besides c0.
+
+MDANCE's tutorial, on its website:
+`PRIME <https://mdance.readthedocs.io/en/latest/tutorials/prime.html>`_.
 
 Similarity (iSIM)
 -----------------

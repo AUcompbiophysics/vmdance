@@ -78,7 +78,8 @@ The clustering is not this plugin's. The algorithms are
 group, MIT): KMeans NANI, DIVINE, HELM, eQual, PRIME and the extended
 (n-ary) similarity. They are run by
 `CPP-MDANCE <https://github.com/mqcomplab/CPP-MDANCE>`_ (© 2025 Andrey
-Nikitin, MIT).
+Nikitin, MIT). MDANCE's logo and its algorithms' logos are MDANCE's (MIT),
+from its repository.
 
 The host is `VMD <https://www.ks.uiuc.edu/Research/vmd/>`_ (Theoretical
 and Computational Biophysics Group, UIUC). VMDance © 2026 Diego Gomes

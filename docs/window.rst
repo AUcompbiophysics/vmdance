@@ -96,8 +96,9 @@ scan's k made the clustering, or when the run came with a session. A range
 belongs to the molecule it was typed for. Choosing another molecule puts
 the frames back to all of them, and the line at the bottom says so.
 
-**Algorithm**: KMeans NANI, DIVINE, HELM or eQual, with what it does. A
-note under it:
+**Algorithm**: KMeans NANI, DIVINE, HELM or eQual, with what it does.
+MDANCE's logo of the chosen algorithm is beside the chooser, dimmed when
+the backend was built without it. A note under it:
 
 - names the algorithms the backend was built without. The backend is asked
   again as the chooser opens, for a program rebuilt meanwhile.
