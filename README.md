@@ -1,7 +1,11 @@
+> [!NOTE]
+> VMDance and CPP-MDANCE will be shipped with VMD 2.1 after the VMDance
+> plugin is peer reviewed.
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/_static/logo/vmdance_dark.svg">
-    <img src="docs/_static/logo/vmdance.svg" alt="VMDance" width="440">
+    <img src="docs/_static/logo/vmdance_card.svg" alt="VMDance" width="440">
   </picture>
 </p>
 
@@ -45,8 +49,8 @@ clusters:
 
 ## Install
 
-Once VMDance and CPP-MDANCE have been through peer review, they will be
-distributed with VMD 2.x. Until then:
+VMDance and CPP-MDANCE will be shipped with VMD 2.1 after the VMDance
+plugin is peer reviewed. Until then:
 
 - build CPP-MDANCE;
 - add the plugin's path to your `~/.vmdrc`. VMDance is a Tcl/Tk plugin:
@@ -109,7 +113,7 @@ vmdance help                                    ;# every subcommand
 ## Documentation
 
 The full documentation is online:
-**[AUcompbiophysics.github.io/vmdmdance](https://AUcompbiophysics.github.io/vmdmdance/)**.
+**[aucompbiophysics.github.io/vmdance](https://aucompbiophysics.github.io/vmdance/)**.
 
 Its sources are in [`docs/`](docs/). It is built with Sphinx:
 `cd docs && make html`, then open `docs/_build/html/index.html`. Its

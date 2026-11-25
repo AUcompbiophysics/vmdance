@@ -11,6 +11,10 @@ navy. This script writes, in docs/_static/logo/:
 - vmdance_dark.svg and vmdance_stacked_dark.svg: the same for a dark
   background ("ance" light);
 - vmdance_mark.svg: the tiles alone, on a square;
+- vmdance_card.svg: the wordmark on a white card, for the README's viewers
+  that do not choose the dark copy by the theme (GitHub's dark theme with
+  the computer's light, an app's preview): legible on any background, and
+  the card unseen on a white page;
 - PNGs of each (the docs' favicon is vmdance_mark_64.png; the quick-start
   guide's title page is vmdance_stacked.png);
 
@@ -60,6 +64,18 @@ def svg(box, paths, title="VMDance"):
     body = "".join(f'<path fill="{f}" d="{d}"/>\n' for f, d in paths)
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{x:g} {y:g} {w:g} {h:g}" '
             f'width="{w:g}" height="{h:g}">\n<title>{title}</title>\n{body}</svg>\n')
+
+
+def card(box, paths, pad=200, radius=180):
+    """The paths on a white card, pad about what is drawn, in the same box
+    (the same size as the other copies where a page sets the width)."""
+    x, y, w, h = box
+    x0, y0, x1, y1 = bounds(paths)
+    rx, ry = max(x, x0 - pad), max(y, y0 - pad)
+    rw, rh = min(x + w, x1 + pad) - rx, min(y + h, y1 + pad) - ry
+    rect = (f'<rect x="{rx:g}" y="{ry:g}" width="{rw:g}" height="{rh:g}" rx="{radius:g}" '
+            f'fill="#ffffff"/>\n')
+    return svg(box, paths).replace("</title>\n", "</title>\n" + rect, 1)
 
 
 def dark(paths):
@@ -167,7 +183,9 @@ def write_all():
         (LOGO / f"{name}_dark.svg").write_text(svg(box, dark(paths)))
         png(box, paths, width).save(LOGO / f"{name}.png", optimize=True)
         png(box, dark(paths), width).save(LOGO / f"{name}_dark.png", optimize=True)
-    box, tiles = mark(read("vmdance.svg")[2])
+    w, h, paths = read("vmdance.svg")
+    (LOGO / "vmdance_card.svg").write_text(card((0, 0, w, h), paths))
+    box, tiles = mark(paths)
     (LOGO / "vmdance_mark.svg").write_text(svg(box, tiles))
     for px in (64, 128, 256, 512):
         png(box, tiles, px, px).save(LOGO / f"vmdance_mark_{px}.png", optimize=True)

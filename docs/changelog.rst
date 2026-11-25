@@ -7,6 +7,12 @@ Changes
 **24 November 2026: the new logo, MDANCE's logos, documentation and
 look, and the window's numbers.**
 
+- VMDance and CPP-MDANCE will be shipped with VMD 2.1 after the VMDance
+  plugin is peer reviewed: a note at the top of the README, and
+  :doc:`install`. The README's logo is the wordmark on a white card where
+  the viewer does not choose the dark copy by its theme.
+- These pages are published from AUcompbiophysics/vmdance:
+  aucompbiophysics.github.io/vmdance.
 - The new logo: a mark of nine tiles, and "vmdance" with v, m and d in
   red, green and blue. A wordmark and a stacked logo, each for a light and
   a dark background; the mark is the favicon and the window's icon.
