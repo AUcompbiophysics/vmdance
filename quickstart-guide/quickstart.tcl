@@ -7,9 +7,9 @@
 # %% start
 package require vmdance
 # %% load
-# 1. Load the trajectory. Set the two paths to your files: as they are, the
-#    files are looked for in the folder VMD runs in. A full path works too;
-#    on Windows, write it with forward slashes (C:/Users/me/tau/aligned_tau.pdb).
+# Load the trajectory. Set the two paths to your files: as they are, the
+# files are looked for in the folder VMD runs in. A full path works too;
+# on Windows, write it with forward slashes (C:/Users/me/tau/aligned_tau.pdb).
 set pdb aligned_tau.pdb                ;# <- your PDB
 set dcd aligned_original_tau_6K.dcd    ;# <- your DCD
 # The PDB is the topology: it names the atoms. Its coordinates come in as
@@ -19,23 +19,23 @@ set m [mol new $pdb waitfor all]
 mol addfile $dcd waitfor all molid $m
 animate delete beg 0 end 0 $m          ;# 6001 frames left, the DCD's
 # %% atoms
-# 2. The atoms: the backbone of residues 3 to 12, N CA C O and H
+# The atoms: the backbone of residues 3 to 12, N CA C O and H
 set sel "resid 3 to 12 and name N CA C O H"
 # %% fit
-# 3. The fit: every frame superposed on frame 999 by those atoms. -fitmove 1
-#    moves VMD's coordinates there (every frame, the whole molecule) before
-#    the first scan reads them; the commands after it find them fitted
+# The fit: every frame superposed on frame 999 by those atoms. -fitmove 1
+# moves VMD's coordinates there (every frame, the whole molecule) before
+# the first scan reads them; the commands after it find them fitted
 set fitframe 999
 set fit [list -fit $sel -fitframe $fitframe -fitmove 1]
 # %% elbow
-# 4. How many clusters? The scores at k 2 to 12, and whether the
-#    clusters change with NANI's seeding (-stability 1)
+# How many clusters? The scores at k 2 to 12, and whether the
+# clusters change with NANI's seeding (-stability 1)
 vmdance elbow -mol $m -sel $sel {*}$fit -kinit CompSim -from 2 -to 12 -stability 1
 puts [vmdance alignment -mol $m -sel $sel]   ;# do the frames look superposed?
 puts [dict get [vmdance elbow suggest] words]
 # %% cluster
-# 5. Cluster: k 6, as MDANCE's own tutorial does (the scan says how far
-#    the four seedings agree on its clusters)
+# Cluster: k 6, as MDANCE's own tutorial does (the scan says how far
+# the four seedings agree on its clusters)
 set k 6
 vmdance elbow load $k
 for {set c 0} {$c < $k} {incr c} {
@@ -45,17 +45,17 @@ for {set c 0} {$c < $k} {incr c} {
 }
 puts "mean silhouette: [dict get [vmdance silhouette] mean]"
 # %% halves
-# 6. Has the run converged? Its two halves, cluster by cluster. Then the
-#    frames on their first two principal components, and the RMSF of each
-#    cluster and each half, residue by residue
+# Has the run converged? Its two halves, cluster by cluster. Then the
+# frames on their first two principal components, and the RMSF of each
+# cluster and each half, residue by residue
 vmdance groups -blocks 2
 puts [vmdance makeup]
 puts [dict get [vmdance groups compare] words]
 vmdance map
 vmdance profiles
 # %% second
-# 7. A second opinion: the same frames clustered by DIVINE, HELM and eQual,
-#    and a sweep of three algorithms and two seedings at k 2 to 8
+# A second opinion: the same frames clustered by DIVINE, HELM and eQual,
+# and a sweep of three algorithms and two seedings at k 2 to 8
 vmdance -mol $m -sel $sel -algorithm divine -k $k
 vmdance -mol $m -sel $sel -algorithm helm -k $k -initial 60
 vmdance -mol $m -sel $sel -algorithm equal -threshold 8
@@ -64,7 +64,7 @@ vmdance sweep -mol $m -sel $sel -algorithms {kmeans divine helm} -from 2 -to 8 \
     -seedings {StratAll CompSim}
 puts [vmdance sweep best db]
 # %% keep
-# 8. Keep it: back to run 1, then its tables, and the session
+# Keep it: back to run 1, then its tables, and the session
 vmdance run 1
 vmdance export tau_results -prefix tau
 vmdance session save tau.vmdance

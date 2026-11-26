@@ -91,7 +91,7 @@ if {[catch {
         if {![file isfile [file join $data $f]]} { error "no $f in \"$data\": set TAU_DATA to BitQT's examples folder" }
     }
     # the guide's trajectory and fit: the frame its script fits on, read there
-    if {![regexp -line {^set fitframe ([0-9]+)$} [read [set fh [open [file join $here quickstart.tcl]]]] -> fitframe]} {
+    if {![regexp -line {^set fitframe ([0-9]+)\s*$} [read [set fh [open [file join $here quickstart.tcl]]]] -> fitframe]} {
         error "quickstart.tcl sets no fitframe"
     }
     close $fh
@@ -117,6 +117,12 @@ if {[catch {
     catch { set cpu [exec sysctl -n machdep.cpu.brand_string] }
     if {$cpu eq ""} { catch { regexp -line {^model name\s*:\s*(.+)$} [exec cat /proc/cpuinfo] -> cpu } }
     keep bnMachine [string trim $cpu]
+    # (the VMD and the CPP-MDANCE it was timed with: the guide's other numbers
+    # may be made elsewhere, numbers.tcl)
+    keep bnVMD [vmdinfo version]
+    set commit ""
+    catch { set commit [exec git -C [file dirname [file dirname [file dirname $cli]]] rev-parse --short HEAD] }
+    keep bnBackendCommit $commit
 
     # each mode in turn: a warm-up of each job (not counted), then the jobs,
     # each `reps` times; VMD's memory before and after

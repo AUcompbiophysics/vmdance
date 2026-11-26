@@ -69,17 +69,19 @@
 \newcommand{\cmd}[1]{\texttt{#1}}
 \newcommand{\Asq}{\AA\textsuperscript{2}}
 \newcommand{\meta}[1]{\textrm{\emph{#1}}}
-% The window's icons (figures/icons, drawn large by icons.py): in the text,
-% and large, for the tables of buttons and plots
-\DeclareRobustCommand{\icon}[1]{\raisebox{-0.35em}{\includegraphics[height=1.4em]{icons/#1.png}}}
-\newcommand{\bigicon}[1]{\includegraphics[width=0.95cm]{icons/#1.png}}
+% The window's icons (the documentation's, ../docs/_static/icons, drawn large
+% by ../docs/tools/icons.py): in the text, and large, for the tables of
+% buttons and plots
+\newcommand{\icondir}{../docs/_static/icons}
+\DeclareRobustCommand{\icon}[1]{\raisebox{-0.35em}{\includegraphics[height=1.4em]{\icondir/#1.png}}}
+\newcommand{\bigicon}[1]{\includegraphics[width=0.95cm]{\icondir/#1.png}}
 % A button of the toolbar: its icon large, its name and keys, what it does
 \newcommand{\tbitem}[3]{\par\noindent
   \begin{minipage}[t]{1.2cm}\vspace{0pt}\bigicon{#1}\end{minipage}%
   \begin{minipage}[t]{\dimexpr\linewidth-1.2cm\relax}\vspace{0pt}\small\raggedright
     {\sffamily\bfseries #2}\enspace #3\end{minipage}\par\vspace{0.8ex}}
 % an icon in a table's row, centred on its text
-\newcommand{\tabicon}[1]{\raisebox{-0.38\height}{\includegraphics[width=0.72cm]{icons/#1.png}}}
+\newcommand{\tabicon}[1]{\raisebox{-0.38\height}{\includegraphics[width=0.72cm]{\icondir/#1.png}}}
 \newcommand{\tbgroup}[1]{\par\noindent{\sffamily\footnotesize\bfseries\color{accent}\MakeUppercase{#1}}\par\vspace{0.6ex}}
 
 % Code
@@ -305,7 +307,8 @@ what it does when the pointer rests on it.
 \subsection{The toolbar, button by button}
 \label{sec:toolbar}
 
-Each icon is a small picture of what its button does. Left to right:
+Each icon is a small picture of what its button does. Left to right (the
+keys are Windows' and Linux's: on macOS, Cmd is where Ctrl is here):
 
 \begin{multicols}{2}
 \tbgroup{The window}
@@ -431,8 +434,8 @@ icon:
   box says which. Once moved, the frames are \qsAsIs\,\AA\ from the first as
   they are, and \qsFitted\,\AA\ once fitted on it: they look superposed. (With
   the fit off, the same note warns, in red-brown, of frames that are not.)
-\item \textbf{Choose the algorithm}, lower in Setup: KMeans NANI
-  \, with \ui{Seeding} set to \ui{Complementary similarity}
+\item \textbf{Choose the algorithm}, lower in Setup: KMeans NANI,
+  with \ui{Seeding} set to \ui{Complementary similarity}
   (\cmd{CompSim}). NANI then draws its seeds from the densest frames.
   \ui{Tolerance} stays 0: k-means runs until no frame changes cluster.
   MDANCE's Python stops a little before, at scikit-learn's tolerance;
@@ -605,7 +608,7 @@ The script leaves two things in the folder:
 \begin{table}[H]
 \centering
 \small
-\caption{The elbow scan (the script\'s \emph{elbow} cell, Section~\ref{sec:script}; Figure~\ref{fig:gallery}M). The stability is
+\caption{The elbow scan (the script's \emph{elbow} cell, Section~\ref{sec:script}; Figure~\ref{fig:gallery}M). The stability is
   the mean adjusted Rand index of every two of NANI's four deterministic
   seedings (1: the same clusters, whatever the seeding).}
 \label{tab:elbow}
@@ -796,7 +799,7 @@ Timeline and the Residence read in nanoseconds.
     Calinski--Harabasz of three algorithms and two seedings at k 2 to 8
     (darker: higher; outlined: the best).
     (M)~\icon{tab_elbow}\,\textbf{Elbow}: how many clusters. The scan of
-    script's \emph{elbow} cell: Calinski--Harabasz (blue),
+    the script's \emph{elbow} cell: Calinski--Harabasz (blue),
     Davies--Bouldin (red) and the stability across NANI's seedings (bars);
     ringed where they point; dotted, the clustering (Table~\ref{tab:elbow}).}
 \end{figure}
@@ -853,9 +856,9 @@ eQual & clusters within a radius of their seeds; the rest is noise &
     The fit is computed on the values, and VMD's own coordinates do not move,
     unless \cmd{-fitmove 1} (\ui{Move VMD's coordinates}) moves them there
     (the script's \emph{fit} cell).
-  \item \textbf{k-means converges.} CPP-MDANCE's KMeans NANI runs until no
-    frame changes cluster; MDANCE's Python stops at scikit-learn's tolerance,
-    and on a slowly converging trajectory a few frames can end elsewhere.
+  \item \textbf{k-means runs to convergence}: until no frame changes cluster.
+    MDANCE's Python stops before, at scikit-learn's tolerance, and on a
+    trajectory that converges slowly a few frames can end elsewhere.
     \cmd{-tol 1e-4} (\ui{Tolerance}) stops where MDANCE does, for its labels.
   \item \textbf{The metric is MSD}, MDANCE's mean square deviation, for
     coordinates. The other indices are for fingerprint-like data; DIVINE and
@@ -898,7 +901,7 @@ runs, after one not counted.
 \centering
 \small
 \caption{The program against the library: seconds a job (\bnMachine, VMD
-  \qsVMD, CPP-MDANCE \qsBackendCommit; \cmd{make bench} in the guide's
+  \bnVMD, CPP-MDANCE \bnBackendCommit; \cmd{make bench} in the guide's
   folder). The last column is the program's time over the library's: below
   1, the program is the faster.}
 \label{tab:bench}
@@ -1040,10 +1043,11 @@ is. The online page \emph{Questions} answers more.
 % ---------------------------------------------------------------------------
 \section{Further reading}
 
-The online documentation, \url{https://aucompbiophysics.github.io/vmdance/},
-goes further: a complete analysis of the tau peptide (HELM's merges' heights,
-eQual's radii, the map and the profiles), the window pane by pane, every
-parameter, every plot, the command, the files, and the plugin's limits.
+The online documentation (\url{https://aucompbiophysics.github.io/vmdance/})
+goes further with this guide's example and setup: a complete analysis of
+the tau peptide (HELM's merges' heights, eQual's radii, the map and the
+profiles), the window pane by pane, every parameter, every plot, the
+command, the files, and the plugin's limits.
 
 \section*{References}
 \phantomsection\label{sec:references}

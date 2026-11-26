@@ -4,8 +4,10 @@ A short guide, from an install to the clusters of a tau peptide's trajectory
 (BitQT's examples), in
 the window and in a script, with a gallery of the 13 plots. It is written for
 the JCIM article's Supporting Information. It is kept apart from `docs/`, the
-online documentation: it reads two of that folder's diagrams and the logo,
-and writes nothing there.
+online documentation: it reads two of that folder's diagrams, the logo and
+the window's icons drawn large (`../docs/_static/icons`), and writes nothing
+there. Both use the same example and setup: the documentation's tutorial
+goes further with it.
 
 The analysis: the PDB as the topology, its own frame deleted after the DCD
 is loaded (6001 frames); every frame fitted on frame 999 by VMDance, which moves VMD's coordinates there (`-fitframe 999 -fitmove 1`), on
@@ -25,11 +27,8 @@ groups; DIVINE, HELM, eQual and a sweep for a second opinion.
 | `bench.tex` | those times, as LaTeX macros (made: do not edit) |
 | `figures.tcl` | runs the same script in VMD with its window, and writes `figures/` |
 | `figures/` | the gallery (`gallery_<plot>.pdf`), the representatives (`main_3d.png`), the window (`window*.png`), and on Windows its views (`view_*.png`), the export dialogs (`dialog_*.png`) and the File menu (`menu_file.png`) (made: do not edit) |
-| `figures/icons/` | the window's icons drawn large, for the tables of buttons and plots (made by `icons.py`: do not edit) |
-| `icons.py` | draws the plugin's icons (`../vmdance/icons/make_icons.py`) at 128 px (Pillow) |
-| `capture_menu.ps1` | opens the File menu on Quick export and takes its picture (Windows) |
 | `annotate.py` | numbers the window's parts, and crops the 3D view to the molecule (Pillow) |
-| `macos_windows.swift` | lists VMD's windows, so that `screencapture` takes the VMDance window alone (macOS); on Windows the pictures are taken by `../docs/tools/capture_win.ps1` |
+| `macos_windows.swift` | lists VMD's windows, so that `screencapture` takes the VMDance window alone (macOS); on Windows the pictures are taken by `../docs/tools/capture_win.ps1`, and the File menu's by `../docs/tools/capture_menu.ps1` |
 | `Makefile` | builds it all |
 
 ## Build the PDF

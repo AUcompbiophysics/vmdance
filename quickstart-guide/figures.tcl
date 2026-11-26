@@ -17,7 +17,8 @@
 #   view_3d.png          3D, and the Timeline
 #   dialog_export.png    File > Export results (the tables, CSV)
 #   dialog_figures.png   File > Create figures (the plots)
-#   menu_file.png        the File menu open on Quick export (capture_menu.ps1)
+#   menu_file.png        the File menu open on Quick export
+#                        (../docs/tools/capture_menu.ps1)
 #   cd quickstart-guide
 #   TAU_DATA=<BitQT>/examples vmd -dispdev win -e figures.tcl < <(sleep 900)
 # (make figures does it. VMD's standard input stays open: VMD draws no new
@@ -241,7 +242,7 @@ if {[catch {
         wm attributes .vmdance -topmost 1
         raise .vmdance
         settle 500
-        set ps [file nativename [file join $here capture_menu.ps1]]
+        set ps [file nativename [file join $::root docs tools capture_menu.ps1]]
         exec powershell -NoProfile -ExecutionPolicy Bypass -File $ps [pid] [wm frame .vmdance] [file nativename $out] 7 &
         tk_popup $w.menu.file [winfo rootx .vmdance] [winfo rooty .vmdance]
         set end [expr {[clock seconds] + 15}]
