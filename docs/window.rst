@@ -63,9 +63,15 @@ Setup
   the number of atoms they match. Some selections are refused (below).
 - the frames: all, or a range (-1 being the last), and every n-th, with
   the number of frames they give.
-- **Fit to the first frame on** a selection. It superposes every frame on
-  the first clustered one before clustering. The fit is made on the
-  values: VMD's coordinates are not moved. It is off unless ticked.
+- **Fit on** a selection. It superposes every frame on a reference frame
+  before clustering. The fit is off unless ticked. Below it:
+
+  - **to frame**: the reference, any frame of the molecule (-1 the last).
+    Empty, the default, is the first clustered frame.
+  - **Move VMD's coordinates**: off, the fit is made on the values and
+    VMD's coordinates are not moved. On, Cluster first moves every frame
+    of the molecule, all of its atoms, onto the reference in VMD, as an
+    alignment would. Reload the trajectory to undo it.
 
 A selection whose atoms can change with the frame is refused: ``within``,
 ``nearest``, ``x``, ``user`` …, or a macro of them. A clustering compares
@@ -76,7 +82,9 @@ freeing about 100 000.
 
 A note under the Fit box says:
 
-- with a fit, the atoms it is made on (*Fitted on 50 atoms*);
+- with a fit, the atoms it is made on, the reference frame, and whether
+  Cluster moves VMD's coordinates (*Fitted on 50 atoms, onto frame 120
+  (on values: VMD's coordinates are not moved).*);
 - without one, how far a sample of the frames (the first and 20 others) is
   from the first, as they are and once fitted on it: *Not fitted. From the
   first frame: 3.71 Å as they are, 3.3 Å fitted: the frames look

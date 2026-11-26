@@ -43,6 +43,15 @@ namespace eval ::VMDance::Export {
 
 proc ::VMDance::Export::items {} { variable catalog; dict keys $catalog }
 
+# A fit's reference frame and whether VMD's coordinates were moved, for a
+# header after "fitted on: atoms" ("" for the first frame, on the values).
+proc ::VMDance::Export::_fit_to {q} {
+    set s ""
+    if {[::VMDance::_get $q fitframe ""] ne ""} { append s ", onto frame [dict get $q fitframe]" }
+    if {[::VMDance::_get $q fitmove 0]} { append s " (VMD's coordinates moved)" }
+    return $s
+}
+
 #---------------------------------------------------------------------------
 # Writing a file (sessions, preferences and figures too)
 #---------------------------------------------------------------------------
@@ -232,7 +241,7 @@ proc ::VMDance::Export::header {{what ""}} {
         # (the name as it is: expr's ?: would write a molecule 1e10 as
         # 10000000000.0, and fail on NaN)
         lappend out "# molecule: [::VMDance::_get $mol name ?] ([join [lmap f [::VMDance::_get $mol files {}] {file tail $f}] {, }])"
-        lappend out "# selection: [dict get $q sel] ([dict get $a natoms] atoms)[expr {[dict get $q fit] ne "" ? ", fitted on: [dict get $q fit]" : ""}]"
+        lappend out "# selection: [dict get $q sel] ([dict get $a natoms] atoms)[expr {[dict get $q fit] ne "" ? ", fitted on: [dict get $q fit][::VMDance::Export::_fit_to $q]" : ""}]"
         set fr [dict get $a frames]
         lappend out "# frames: [llength $fr] ([lindex $fr 0] to [lindex $fr end], step [dict get $q step])"
         set p {}
@@ -519,7 +528,7 @@ proc ::VMDance::Export::scan_header {what q mol frames params s verb} {
     set files [::VMDance::_get $mol files {}]
     lappend out "# molecule: [::VMDance::_get $mol name ?] ([join [lmap f $files {file tail $f}] {, }])"
     set fit [::VMDance::_get $q fit ""]
-    lappend out "# selection: [dict get $q sel][expr {$fit ne "" ? ", fitted on: $fit" : ""}]"
+    lappend out "# selection: [dict get $q sel][expr {$fit ne "" ? ", fitted on: $fit[_fit_to $q]" : ""}]"
     lappend out "# frames: [llength $frames] ([lindex $frames 0] to [lindex $frames end], step [::VMDance::_get $q step 1])"
     foreach {label p} $params {
         if {[catch {dict size $p} n] || !$n} continue

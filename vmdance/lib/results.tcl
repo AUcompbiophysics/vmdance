@@ -377,6 +377,11 @@ proc ::VMDance::Results::check_molecule {what r} {
 # their length (natoms: at most a run of each; "" not known) before they are
 # matched. (A request of a session made before has the texts only.)
 proc ::VMDance::Results::check_atoms {whose q natoms mol} {
+    # (the fit's reference frame: "" the first frame, else a frame number,
+    # handed to atomselect; whether it was moved: 0 or 1)
+    set ff [::VMDance::_get $q fitframe ""]
+    if {$ff ne "" && ![regexp {^(0|[1-9][0-9]{0,9})$} $ff]} { error "$whose fit frame is corrupt" }
+    if {[::VMDance::_get $q fitmove 0] ni {0 1}} { error "$whose fit move is corrupt" }
     if {![dict exists $q atoms]} return
     set re {^index( (0|[1-9][0-9]{0,9})( to (0|[1-9][0-9]{0,9}))?)+$}
     set fa [::VMDance::_get $q fitatoms ""]
@@ -521,7 +526,7 @@ proc ::VMDance::Results::describe {a} {
     # or "10 clusters" names 8)
     set e [llength [lsearch -all -exact [dict get $a sizes] 0]]
     if {$e} { append s " ($e empty)" }
-    if {[dict get $q fit] ne ""} { append s ", fitted" }
+    if {[dict get $q fit] ne ""} { append s ", fitted[expr {[::VMDance::_get $q fitframe ""] ne "" ? " to frame [dict get $q fitframe]" : ""}]" }
     return $s
 }
 # The clusters of the current clustering that have no frame.
@@ -602,7 +607,7 @@ proc ::VMDance::Results::_trust {m d} {
         [dict get $c digest] eq [::VMDance::_get $d digest ""]} {
         set f1 [expr {[_span $d] - 1}]
         if {[catch {::VMDance::Coords::ends $m [dict get $c atoms] [dict get $c fitatoms] [lindex [dict get $d frames] 0] \
-                [lindex [dict get $d frames] $f1]} ends] ||
+                [lindex [dict get $d frames] $f1] [::VMDance::_get $c fitframe ""]} ends] ||
             $ends ne [list [lindex [dict get $c fp] 0] [lindex [dict get $c fp] $f1]]} { return "" }
     }
     _now $m
@@ -1013,7 +1018,7 @@ proc ::VMDance::Results::_inherit_map {a} {
     variable A
     if {[dict exists $a extras map] || ![has_data] || ![dict exists $A extras map]} { return $a }
     foreach key {digest frames natoms} { if {[dict get $A $key] ne [dict get $a $key]} { return $a } }
-    foreach key {mol fit atoms fitatoms} {
+    foreach key {mol fit fitframe atoms fitatoms} {
         if {[::VMDance::_get [dict get $A request] $key ""] ne [::VMDance::_get [dict get $a request] $key ""]} { return $a }
     }
     dict set a extras map [dict get $A extras map]
@@ -1212,7 +1217,7 @@ proc ::VMDance::Results::same_frames {m d {shift 0} {memo ""}} {
     if {!$all} { set frames [lrange $frames 0 [expr {$n - 1}]] }
     # (the atoms that were read, not those the texts select now)
     if {[catch {::VMDance::Coords::prints_of $m [::VMDance::_get $q atoms [dict get $q sel]] \
-            [::VMDance::_get $q fitatoms [dict get $q fit]] $frames $memo} fps]} { return 0 }
+            [::VMDance::_get $q fitatoms [dict get $q fit]] $frames $memo [::VMDance::_get $q fitframe ""]} fps]} { return 0 }
     expr {($all && [::VMDance::Coords::same_prints $fps $digest]) ||
           [_same_shape [lrange $fps 0 [expr {$n - 1}]] [lrange [::VMDance::_get $d shape {}] 0 [expr {$n - 1}]]]}
 }

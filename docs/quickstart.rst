@@ -25,8 +25,10 @@ In the window
    - the atoms (``name CA`` by default). The line under the field says how
      many;
    - the frames, and every n-th;
-   - *Fit to the first frame* if the frames are not superposed. The note
-     under it says whether they look superposed.
+   - *Fit on* if the frames are not superposed, onto the first clustered
+     frame or another (*to frame*), on the values or moving VMD's
+     coordinates (*Move VMD's coordinates*). The note under it says
+     whether they look superposed.
 
 4. **Setup ▸ Algorithm**: KMeans NANI, with k 6 by default. Press
    **Cluster** (Ctrl+R). It runs in the background. The ring in the

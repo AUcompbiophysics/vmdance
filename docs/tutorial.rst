@@ -69,7 +69,7 @@ In **Setup ▸ What to cluster**, choose:
 The atoms decide what "alike" means. The backbone compares the peptide's
 folds. Its side chains are left out, and so are the two flexible ends.
 
-*Fit to the first frame* stays off, and the note under it says why it can:
+*Fit on* stays off, and the note under it says why it can:
 *Not fitted. From the first frame: 3.71 Å as they are, 3.3 Å fitted: the
 frames look superposed.* A trajectory that was not aligned is far from its
 first frame as it is, and near it once fitted. The note then turns

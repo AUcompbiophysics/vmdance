@@ -53,7 +53,7 @@ namespace eval ::VMDance::Job {
     variable scan_chunk 16             ;#   of this many values
     variable lib2_peak 40              ;# API 2: bytes a coordinate at a call's peak (the dataset and the algorithms' copies)
     # what a clustering request holds, and its defaults
-    variable input_defaults {mol top sel "name CA" first 0 last -1 step 1 fit ""}
+    variable input_defaults {mol top sel "name CA" first 0 last -1 step 1 fit "" fitframe "" fitmove 0}
 }
 
 proc ::VMDance::Job::busy {} { variable running; return $running }
@@ -82,6 +82,10 @@ proc ::VMDance::Job::_tell {what kind} {
 
 # The input of a request (what is clustered), checked: mol (an id), sel,
 # fit, first, last, step, and frames (the VMD frames) and natoms added.
+# With a fit: fitframe, the frame it superposes on (any of the molecule's,
+# -1 its last; "" — and the first analysed frame itself — the first
+# analysed), and fitmove, 1 to move VMD's coordinates onto it before they
+# are read (Job::_coords), 0 to fit their values only.
 proc ::VMDance::Job::check_input {req} {
     variable input_defaults
     set req [dict merge $input_defaults $req]
@@ -95,6 +99,23 @@ proc ::VMDance::Job::check_input {req} {
     if {$nf < 2} { error "-first, -last, -step: a clustering needs at least 2 frames (these give $nf)" }
     if {![::VMDance::Mol::exists $m]} { error "molecule $m was deleted" }
     lassign [::VMDance::Coords::check_selection $m [dict get $req sel] [dict get $req fit]] natoms idx fidx
+    set ff [string trim [dict get $req fitframe]]
+    set mv [string trim [dict get $req fitmove]]
+    if {![string is boolean -strict $mv]} { error "-fitmove must be 0 or 1 (got \"$mv\")" }
+    set mv [expr {$mv ? 1 : 0}]
+    if {[dict get $req fit] eq ""} {
+        if {$ff ne ""} { error "-fitframe: the frame a fit superposes on: give the fit's atoms too (-fit selection)" }
+        if {$mv} { error "-fitmove: moving the coordinates is a fit's: give the fit's atoms too (-fit selection)" }
+    } elseif {$ff ne ""} {
+        if {![regexp {^-?(0|[1-9][0-9]*)$} $ff]} { error "-fitframe must be a whole number (got \"$ff\")" }
+        set nfm [molinfo $m get numframes]
+        if {$ff == -1} { set ff [expr {$nfm - 1}] }
+        if {$ff < 0 || $ff >= $nfm} { error "-fitframe must be a frame of molecule $m: 0 to [expr {$nfm - 1}], or -1 for the last (got $ff)" }
+        set ff [expr {$ff}]
+        if {$ff == [lindex [dict get $req frames] 0]} { set ff "" }
+    }
+    dict set req fitframe $ff
+    dict set req fitmove $mv
     dict set req natoms $natoms
     # (the atoms the texts select now: "beta > 0" may be other atoms later)
     dict set req atoms [::VMDance::Mol::index_text $idx]
@@ -389,6 +410,19 @@ proc ::VMDance::Job::_progress {frac msg} {
 # The coordinates of a request, read in the background (progress within
 # [lo, hi] of the job).
 proc ::VMDance::Job::_coords {req {lo 0.0} {hi 0.4}} {
+    # (fitmove: VMD's coordinates moved onto the reference first, every
+    # frame and atom; frames already there are not moved, so the kept rows
+    # of a clustering stay valid for the scans after it)
+    if {[::VMDance::_get $req fitmove 0] && [::VMDance::_get $req fitatoms ""] ne ""} {
+        set ref [::VMDance::_get $req fitframe ""]
+        if {$ref eq ""} { set ref [lindex [dict get $req frames] 0] }
+        set mid [expr {$lo + ($hi - $lo) / 2.0}]
+        _progress $lo "moving the frames onto frame $ref"
+        ::VMDance::Coords::align [dict get $req mol] [dict get $req fitatoms] $ref [list apply {{lo hi f m} {
+            ::VMDance::Job::_progress [expr {$lo + ($hi - $lo) * $f}] $m
+        }} $lo $mid] ::VMDance::Job::cancelled
+        set lo $mid
+    }
     set c [::VMDance::Coords::cached $req ::VMDance::Job::cancelled]
     if {[dict size $c]} { return $c }
     _progress $lo "reading [llength [dict get $req frames]] frames"
@@ -1111,7 +1145,7 @@ proc ::VMDance::Job::_scan_scores {c recs a at} {
 # the molecule, the frames, the clustering and the plugin's measures.
 proc ::VMDance::Job::_result {c req cl t0} {
     set m [dict get $req mol]
-    set q [dict filter $req key mol sel fit first last step algorithm k metric params atoms fitatoms]
+    set q [dict filter $req key mol sel fit fitframe fitmove first last step algorithm k metric params atoms fitatoms]
     set r [dict create format 1 request $q molecule [_molecule $req] \
         frames [dict get $c frames] natoms [dict get $c natoms]]
     set r [dict merge $r [dict remove $cl backend]]
@@ -1177,7 +1211,7 @@ proc ::VMDance::Job::_same_coords {c r what} {
 # which).
 proc ::VMDance::Job::_scan {kind req recs t0 {digest ""}} {
     variable backend
-    set keys [expr {$kind eq "elbow" ? {mol sel fit first last step atoms fitatoms algorithm metric params ks radii stability} : {mol sel fit first last step atoms fitatoms}}]
+    set keys [expr {$kind eq "elbow" ? {mol sel fit fitframe fitmove first last step atoms fitatoms algorithm metric params ks radii stability} : {mol sel fit fitframe fitmove first last step atoms fitatoms}}]
     dict create format 1 kind $kind request [dict filter $req key {*}$keys] \
         molecule [_molecule $req] frames [dict get $req frames] \
         natoms [dict get $req natoms] records $recs digest $digest backend $backend \
@@ -1725,7 +1759,7 @@ proc ::VMDance::Job::_do_pick {req} {
     if {$once != [llength $idx]} { error "the backend picked a frame more than once ([llength $idx] picks of $once frames)" }
     # (what tells their frames, as a clustering's: their numbers are VMD's
     # only while the molecule has them, Results::picks_ok)
-    dict create params $p input [dict filter $req key mol sel fit first last step atoms fitatoms] \
+    dict create params $p input [dict filter $req key mol sel fit fitframe fitmove first last step atoms fitatoms] \
         molecule [_molecule $req] frames [dict get $c frames] \
         rows $idx vmdframes [lmap i $idx {lindex [dict get $c frames] $i}] \
         digest [dict get $c digest] shape [_shape $c] \
@@ -1748,7 +1782,7 @@ proc ::VMDance::Job::_input_of {q frames natoms} {
     set m [dict get $q mol]
     if {![::VMDance::Mol::exists $m]} { error "the clustered molecule is not loaded (reopen it, or load the session with its molecule)" }
     dict set q last [lindex $frames end]
-    set in [dict filter $q key mol sel fit first last step]
+    set in [dict filter $q key mol sel fit fitframe first last step]
     set atoms [dict exists $q atoms]
     if {$atoms} {
         dict set in sel [dict get $q atoms]

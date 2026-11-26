@@ -69,7 +69,10 @@ and Molywood Studio. docs/design.rst and docs/internals.rst describe it.
   (expr compares "1o" as a string and reads "010" as octal).
 - VMD state is borrowed: a job never moves VMD's frame or coordinates (the
   fit is computed on values: `coordtrans`, not `vectrans`, which drops the
-  translation); selections are made and deleted at the global level
+  translation) — but for a request with `fitmove 1`, which asks for it:
+  Coords::align moves every frame, all atoms, onto `fitframe` ("" the first
+  clustered frame) before the rows are read, and leaves a frame already
+  there unmoved (`_still`) so the kept rows stay valid; selections are made and deleted at the global level
   (Mol::sel, Mol::free); the plugin's representations are found by name
   (mol repname) and only they are deleted; `mol addrep` settings are read
   and put back (Viz::_mol_settings); the user field is written only when

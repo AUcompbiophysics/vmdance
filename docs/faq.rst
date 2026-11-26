@@ -36,12 +36,12 @@ clusters, or seed with k-means++.
 
 **Should I fit the frames?** MDANCE clusters coordinates as they are. A
 trajectory aligned on the atoms that matter (the backbone, say) clusters
-shapes. If yours is not aligned, tick *Fit to the first frame*. Otherwise
+shapes. If yours is not aligned, tick *Fit on*. Otherwise
 frames also separate by where the molecule drifted. The fit is off unless
 ticked. A run's summary and name say whether it was fitted.
 
 **Is my trajectory aligned?** Setup says. With the fit off, the note under
-*Fit to the first frame* gives how far a sample of the frames is from the
+*Fit on* gives how far a sample of the frames is from the
 first, as they are and once fitted. It warns, in a red-brown tone, when
 they do not look superposed: when a fit halves that distance and takes an
 ångström off it. ``vmdance alignment`` returns the same numbers. The

@@ -368,6 +368,18 @@ so that no core is dumped.
        - a long elbow scanned in chunks of its smallest values first, with
          one scan's labels; cancelled, its smallest values kept
        - the memory a call needs (where the system says what is free)
+   * - ``test_fitframe``
+     - the fit onto any frame (``-fitframe``), on the values or moving
+       VMD's coordinates (``-fitmove``):
+
+       - the options checked: a fit's only, a frame of the molecule, -1
+         the last, the first clustered frame the default
+       - the rows superposed on the reference: its own row its coordinates
+       - ``-fitmove 0`` leaves VMD's coordinates; ``-fitmove 1`` moves every
+         frame and atom onto the reference, rigidly, and clusters as
+         ``-fitmove 0``; aligning again moves nothing and keeps the rows
+       - the run's name, ``info`` and the files' header say them; a corrupt
+         one in a session is refused
    * - ``test_hardening2_h4``
      - the exports and the stated requirements:
 

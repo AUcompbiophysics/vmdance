@@ -71,14 +71,18 @@ Clustering
 
 .. code-block:: tcl
 
-   vmdance -mol top -sel "name CA" -fit "" -first 0 -last -1 -step 1 \
+   vmdance -mol top -sel "name CA" -fit "" -fitframe "" -fitmove 0 -first 0 -last -1 -step 1 \
        -algorithm kmeans|divine|helm|equal -k n -metric MSD ?parameters? \
        ?-label text? ?-quiet 0?
 
 The parameters are the algorithm's, named as ``mdance-cli`` names them
 (:doc:`parameters`). ``-k`` is 6 by default. eQual takes no k: its
 ``-threshold``, the radius, is 2. ``-fit selection`` first superposes
-every frame on the first clustered one.
+every frame on the first clustered one, or on frame ``-fitframe f`` (any
+frame of the molecule; -1 the last). ``-fitmove 1`` moves VMD's
+coordinates onto it first, every frame and atom; with ``-fitmove 0``, the
+default, only the values are fitted. ``info`` returns both, as
+``fitframe`` ("" for the first clustered frame) and ``fitmove``.
 
 The clustering is published as a new :term:`run`, the current one, and
 the command returns ``info``. The run is named ``-label``. Without it, the
@@ -99,7 +103,7 @@ any input:
 
    vmdance alignment ?-mol top? ?-sel "name CA"? ?-first 0? ?-last -1? ?-step 1?
        ;# as_is 3.711 fitted 3.304 frames 21 atoms 50 superposed 1 words {the frames are …}
-   vmdance radii ?-mol top? ?-sel "name CA"? ?-fit ""? ?-first 0? ?-last -1? ?-step 1?
+   vmdance radii ?-mol top? ?-sel "name CA"? ?-fit ""? ?-fitframe ""? ?-fitmove 0? ?-first 0? ?-last -1? ?-step 1?
        ;# sample 147 pairs 10731 percentiles {2 3.42 5 4.5 10 5.57 25 7.56 50 10.3} from 3.4 to 10 by 0.73
 
 ``alignment`` takes a sample of the frames: the first and 20 others at

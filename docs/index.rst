@@ -42,8 +42,9 @@ VMD's 3D window.
      - A molecule's frames (all, a range, every n-th), by the coordinates of
        the same atoms. With KMeans NANI, DIVINE, HELM (from a first NANI
        clustering or a label file) or eQual (clusters within a radius, and
-       noise). Optionally fitted to the first frame, without moving VMD's
-       coordinates. A warning when the frames do not look superposed.
+       noise). Optionally fitted onto the first frame or any other, on the
+       values or moving VMD's coordinates. A warning when the frames do
+       not look superposed.
    * - **Choose k**
      - An elbow scan of the Calinski–Harabasz and Davies–Bouldin scores,
        ringed where they point. Davies–Bouldin's lowest value and sharpest

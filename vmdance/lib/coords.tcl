@@ -22,8 +22,11 @@
 # The selection is read once, at the first analysed frame, and the same
 # atoms are read at every frame: a selection whose text can change with the
 # frame (within, x, user ...) is refused. With a fit selection, every frame
-# is first superposed on the first analysed frame by those atoms, on the
-# values: VMD's own coordinates are never moved.
+# is first superposed by those atoms on the reference frame (fitframe: a
+# frame of the molecule, analysed or not; "" the first analysed one), on
+# the values: VMD's own coordinates are not moved here. A request with
+# fitmove moves them first (align: every frame, every atom, as VMD's own
+# alignment would; Job::_coords).
 #
 # The last extraction is kept (Coords::cached), so that the questions that
 # follow a clustering (an elbow scan, PRIME, similarity, frame picks) do not
@@ -46,12 +49,13 @@ namespace eval ::VMDance::Coords {
 
 # The input part of a request, which the extraction depends on: the
 # atoms themselves (a selection text can select others after a change of
-# the structure), else the texts.
+# the structure), else the texts; and the fit's reference frame.
 proc ::VMDance::Coords::key {req} {
     set m [dict get $req mol]
     set a [::VMDance::_get $req atoms [dict get $req sel]]
     set f [::VMDance::_get $req fitatoms [dict get $req fit]]
-    list $m [molinfo $m get numatoms] [molinfo $m get numframes] [lindex [molinfo $m get filename] 0] $a [dict get $req frames] $f
+    list $m [molinfo $m get numatoms] [molinfo $m get numframes] [lindex [molinfo $m get filename] 0] $a [dict get $req frames] $f \
+        [::VMDance::_get $req fitframe ""]
 }
 
 # The kept extraction for a request, or {}: the same molecule, atoms and
@@ -101,15 +105,16 @@ if {[info commands molinfo] ne "" &&
 # Selections of the atoms of an extraction at a frame and at its first
 # frame (r0: every frame's RMSD from it), and the weights of their
 # fingerprints (one per atom): {s fs ref w wf r0} (fs, ref and wf "" without
-# a fit; ref the fit's atoms at the first frame). Free them with close.
-proc ::VMDance::Coords::_open {m atoms fitatoms f0} {
+# a fit; ref the fit's atoms at the reference frame: fitframe, "" the first
+# frame). Free them with close.
+proc ::VMDance::Coords::_open {m atoms fitatoms f0 {fitframe ""}} {
     set s [::VMDance::Mol::sel $m $atoms $f0]
     set fs ""; set ref ""; set wf ""; set r0 ""
     if {[catch {
         set r0 [::VMDance::Mol::sel $m $atoms $f0]
         if {$fitatoms ne ""} {
             set fs [::VMDance::Mol::sel $m $fitatoms $f0]
-            set ref [::VMDance::Mol::sel $m $fitatoms $f0]
+            set ref [::VMDance::Mol::sel $m $fitatoms [expr {$fitframe eq "" ? $f0 : $fitframe}]]
         }
     } err]} { ::VMDance::Mol::free $s $r0 $fs $ref; error $err }
     if {$fs ne ""} { set wf [_weights [$fs num]] }
@@ -379,7 +384,7 @@ proc ::VMDance::Coords::_fp {h f} {
 # Whether every frame's coordinates are those an extraction read.
 proc ::VMDance::Coords::unchanged {c {cancelled ""}} {
     set frames [dict get $c frames]
-    set h [_open [dict get $c mol] [dict get $c atoms] [dict get $c fitatoms] [lindex $frames 0]]
+    set h [_open [dict get $c mol] [dict get $c atoms] [dict get $c fitatoms] [lindex $frames 0] [::VMDance::_get $c fitframe ""]]
     try {
         set slice [clock milliseconds]
         foreach f $frames fp [dict get $c fp] {
@@ -441,10 +446,11 @@ proc ::VMDance::Coords::extract {req {progress ""} {cancelled ""}} {
         [::VMDance::_get $req fitatoms [dict get $req fit]]] natoms idx fidx
     set atoms [::VMDance::Mol::index_text $idx]
     set fitatoms [expr {[llength $fidx] ? [::VMDance::Mol::index_text $fidx] : ""}]
+    set fitframe [expr {$fitatoms eq "" ? "" : [::VMDance::_get $req fitframe ""]}]
     set t0 [clock milliseconds]
     set csv [::VMDance::Backend::tmpfile .csv]
     set tmp $csv.part
-    set h [_open $m $atoms $fitatoms [lindex $frames 0]]
+    set h [_open $m $atoms $fitatoms [lindex $frames 0] $fitframe]
     set fh ""
     set fps {}
     try {
@@ -488,7 +494,7 @@ proc ::VMDance::Coords::extract {req {progress ""} {cancelled ""}} {
     # (the digest of every frame's fingerprint: a clustering and its scans
     # keep it, so that a question asked later reads the same coordinates)
     set C [dict create key [key $req] natoms $natoms frames $frames csv $csv mol $m \
-        atoms $atoms fitatoms $fitatoms fp $fps digest [_digest $fps] \
+        atoms $atoms fitatoms $fitatoms fitframe $fitframe fp $fps digest [_digest $fps] \
         seconds [expr {([clock milliseconds] - $t0) / 1000.0}]]
     return $C
 }
@@ -517,16 +523,18 @@ proc ::VMDance::Coords::same {c digest} {
     same_prints [dict get $c fp] $digest
 }
 # The fingerprints of frames of molecule m as a clustering of these atoms
-# (fitted on fitatoms) has them; memo (an array's name: a session's checks
-# as it opens) keeps them for the molecule's number of frames.
-proc ::VMDance::Coords::prints_of {m atoms fitatoms frames {memo ""}} {
+# (fitted on fitatoms, at frame fitframe) has them; memo (an array's name:
+# a session's checks as it opens) keeps them for the molecule's number of
+# frames.
+proc ::VMDance::Coords::prints_of {m atoms fitatoms frames {memo ""} {fitframe ""}} {
     if {$memo ne ""} {
         upvar #0 $memo M
-        set key [list $m [molinfo $m get numframes] $atoms $fitatoms $frames]
+        set key [list $m [molinfo $m get numframes] $atoms $fitatoms $frames $fitframe]
         if {[info exists M($key)]} { return $M($key) }
     }
     lassign [check_selection $m $atoms $fitatoms] natoms idx fidx
-    set h [_open $m [::VMDance::Mol::index_text $idx] [expr {[llength $fidx] ? [::VMDance::Mol::index_text $fidx] : ""}] [lindex $frames 0]]
+    if {$fitframe ne "" && $fitframe >= [molinfo $m get numframes]} { error "molecule $m has no frame $fitframe (the fit's reference)" }
+    set h [_open $m [::VMDance::Mol::index_text $idx] [expr {[llength $fidx] ? [::VMDance::Mol::index_text $fidx] : ""}] [lindex $frames 0] $fitframe]
     try {
         set fps [lmap f $frames {_fp $h $f}]
     } finally {
@@ -538,13 +546,73 @@ proc ::VMDance::Coords::prints_of {m atoms fitatoms frames {memo ""}} {
 # The fingerprints of frames f0 and f1 of molecule m, of these atoms (as
 # an extraction has them, f0 its first frame): whether the frames there are
 # still those it read (Results::_trust).
-proc ::VMDance::Coords::ends {m atoms fitatoms f0 f1} {
-    set h [_open $m $atoms $fitatoms $f0]
+proc ::VMDance::Coords::ends {m atoms fitatoms f0 f1 {fitframe ""}} {
+    set h [_open $m $atoms $fitatoms $f0 $fitframe]
     try { list [_fp $h $f0] [_fp $h $f1] } finally { _close $h }
 }
 # Their digest: whether they are the coordinates a clustering read.
-proc ::VMDance::Coords::digest_of {m atoms fitatoms frames} {
-    _digest [prints_of $m $atoms $fitatoms $frames]
+proc ::VMDance::Coords::digest_of {m atoms fitatoms frames {fitframe ""}} {
+    _digest [prints_of $m $atoms $fitatoms $frames "" $fitframe]
+}
+
+# Move VMD's coordinates: every frame of molecule m, all of its atoms,
+# superposed by the atoms fitatoms on frame ref, by the fit a clustering
+# computes (fit_matrix: the least RMSD). A frame already superposed (a
+# move within float rounding of none: 1e-5 of a rotation, 1e-3 Å) is left
+# as it is, so that aligning again moves nothing and the kept extraction
+# stays valid. Returns the number of frames moved. In a coroutine it yields
+# every 40 ms (progress {fraction message} called) and stops when
+# `cancelled` names a true variable — the frames moved by then stay moved.
+proc ::VMDance::Coords::align {m fitatoms ref {progress ""} {cancelled ""}} {
+    set nf [molinfo $m get numframes]
+    if {$ref < 0 || $ref >= $nf} { error "-fitframe: molecule $m has no frame $ref" }
+    set fs [::VMDance::Mol::sel $m $fitatoms $ref]
+    set all ""
+    set moved 0
+    try {
+        set Y [$fs get {x y z}]
+        if {[regexp -nocase {nan|inf} $Y]} { error "-fitframe: frame $ref of molecule $m has coordinates that are not numbers (in the fit selection): it cannot be the reference" }
+        set R [fit_ref $Y]
+        set all [::VMDance::Mol::sel $m all $ref]
+        set slice [clock milliseconds]
+        for {set f 0} {$f < $nf} {incr f} {
+            if {$f == $ref} continue
+            $fs frame $f
+            set X [$fs get {x y z}]
+            if {[regexp -nocase {nan|inf} $X]} {
+                error "-fitmove: frame $f of molecule $m has coordinates that are not numbers (in the fit selection): delete it (animate delete beg $f end $f $m), $moved frames were moved"
+            }
+            set M [fit_matrix $X $R]
+            if {![_still $M]} {
+                $all frame $f
+                $all move $M
+                incr moved
+            }
+            if {[info coroutine] ne "" && [clock milliseconds] - $slice > 40} {
+                if {$progress ne ""} { {*}$progress [expr {double($f) / $nf}] "moving frame $f of $nf onto frame $ref" }
+                after 1 [info coroutine]
+                yield
+                set slice [clock milliseconds]
+                if {$cancelled ne "" && [set $cancelled]} { error "cancelled" }
+                if {![::VMDance::Mol::exists $m]} { error "molecule $m was deleted while its frames were moved" }
+                if {[molinfo $m get numframes] != $nf} { error "frames of molecule $m were added or deleted while they were moved" }
+            }
+        }
+    } finally {
+        ::VMDance::Mol::free $fs $all
+    }
+    return $moved
+}
+# Whether a move (fit_matrix's) is none, within float rounding.
+proc ::VMDance::Coords::_still {M} {
+    for {set i 0} {$i < 3} {incr i} {
+        set r [lindex $M $i]
+        for {set j 0} {$j < 3} {incr j} {
+            if {abs([lindex $r $j] - ($i == $j)) > 1e-5} { return 0 }
+        }
+        if {abs([lindex $r 3]) > 1e-3} { return 0 }
+    }
+    return 1
 }
 
 # The CSV file of an extraction (the program's input).
@@ -584,12 +652,12 @@ proc ::VMDance::Coords::each {c ivar rowvar script {cancelled ""}} {
     upvar 1 $ivar i $rowvar row
     set m [dict get $c mol]
     set here [expr {[::VMDance::Mol::exists $m] && [key [dict create mol $m sel [lindex [dict get $c key] 4] \
-        frames [dict get $c frames] fit [lindex [dict get $c key] 6]]] eq [dict get $c key]}]
+        frames [dict get $c frames] fit [lindex [dict get $c key] 6] fitframe [lindex [dict get $c key] 7]]] eq [dict get $c key]}]
     set slice [clock milliseconds]
     set i 0
     if {$here} {
         set frames [dict get $c frames]
-        set h [_open $m [dict get $c atoms] [dict get $c fitatoms] [lindex $frames 0]]
+        set h [_open $m [dict get $c atoms] [dict get $c fitatoms] [lindex $frames 0] [::VMDance::_get $c fitframe ""]]
         try {
             foreach f $frames fp0 [dict get $c fp] {
                 lassign [_row $h $f] row fp
