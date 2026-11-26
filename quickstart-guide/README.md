@@ -70,9 +70,11 @@ commit), how long it took and the session's size.
 
 `make figures` opens VMD's windows on the screen for a minute: the figures
 are drawn by Tk, which text-mode VMD cannot load. The window's picture is
-taken on macOS only (`screencapture`, which needs the terminal to be allowed
-to record the screen); elsewhere `figures/window*.png` are kept as they are.
+taken on macOS (`screencapture`, which needs the terminal to be allowed to
+record the screen) and on Windows, where its other views, the two dialogs and
+the File menu are taken too; elsewhere `figures/window*.png` are kept as they
+are.
 
-The numbers and figures were made with CPP-MDANCE a5d197b (its main,
-0546995, and two commits that change only the release builds) and VMD
-2.0.0a6 on an Apple M1 Max.
+The numbers, the benchmark and the figures were made with CPP-MDANCE 9a3747c
+(its library v2, pull request #62) and VMD 2.0.0rc1 on Windows, on an Intel
+N100.
