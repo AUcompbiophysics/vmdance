@@ -78,6 +78,7 @@ figures:
 	    kill $$sp 2>/dev/null; rm -f $(BUILD)/stdin
 	@grep -q '^done' $(BUILD)/figures.log || { echo "figures.tcl failed: see $(BUILD)/figures.log"; exit 1; }
 	python3 annotate.py figures
+	python3 icons.py
 
 # The same run, compared with the numbers the guide quotes. Where it ran
 # (VMD, the platform, the machine, the backend's commit), how long it took

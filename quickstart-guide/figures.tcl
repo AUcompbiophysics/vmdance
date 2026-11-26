@@ -6,8 +6,18 @@
 #                        Sweep and the Elbow the page's width (178 mm,
 #                        9-point text)
 #   main_3d.png          the representatives in VMD's 3D window
-#   window.png           the VMDance window (macOS only: screencapture), and
+#   window.png           the VMDance window (macOS: screencapture; Windows:
+#                        ../docs/tools/capture_win.ps1), and
 #   window_parts.txt     where its parts are, for annotate.py
+# and on Windows the window's other views, for the guide's walk through it:
+#   view_setup.png       Setup filled as the guide fills it, and the
+#                        Populations of the clustering it makes
+#   view_scans.png       Scans, and the Elbow
+#   view_tools.png       Tools, and the Map
+#   view_3d.png          3D, and the Timeline
+#   dialog_export.png    File > Export results (the tables, CSV)
+#   dialog_figures.png   File > Create figures (the plots)
+#   menu_file.png        the File menu open on Quick export (capture_menu.ps1)
 #   cd quickstart-guide
 #   TAU_DATA=<BitQT>/examples vmd -dispdev win -e figures.tcl < <(sleep 900)
 # (make figures does it. VMD's standard input stays open: VMD draws no new
@@ -35,6 +45,24 @@ proc settle {{ms 400}} {
 proc place_of {wd} {
     list [expr {[winfo rootx $wd] - [winfo rootx .vmdance]}] [expr {[winfo rooty $wd] - [winfo rooty .vmdance]}] \
         [winfo width $wd] [winfo height $wd]
+}
+# A window's picture on Windows: its client area copied from the screen
+# (the online documentation's capture_win.ps1), raised and on top meanwhile
+proc grab_win {win file} {
+    wm attributes $win -topmost 1
+    raise $win
+    settle 600
+    set ps [file nativename [file join $::root docs tools capture_win.ps1]]
+    try {
+        exec powershell -NoProfile -ExecutionPolicy Bypass -File $ps [wm frame $win] [file nativename $file] 2>@1
+    } finally {
+        wm attributes $win -topmost 0
+    }
+}
+# A job of the window's, run to its end
+proc wait_idle {} {
+    while {$::VMDance::GUI::S(busy)} { vwait ::VMDance::GUI::S(busy) }
+    settle 300
 }
 
 if {[catch {
@@ -124,8 +152,105 @@ if {[catch {
         }
         close $fh
         log "window: $id"
+    } elseif {$::tcl_platform(platform) eq "windows"} {
+        set G ::VMDance::GUI
+        upvar #0 ${G}::S S
+        set w [vmdance]
+        # (whole on the screen, at its top left: a part off it is black)
+        wm geometry .vmdance 1350x950+0+0
+        settle 1500
+        # the window: Results, and the Make-up of the two halves
+        ${G}::show_pane results
+        ${G}::show_tab makeup
+        grab_win .vmdance [file join $figs window.png]
+        set tab [$w.pw.right.nb select]
+        set fh [open [file join $figs window_parts.txt] w]
+        puts $fh [list window 0 0 [winfo width .vmdance] [winfo height .vmdance]]
+        foreach {name wd} [list toolbar $w.tb panes $w.pw.left.nb plots $w.pw.right.nb plot $tab.c \
+                options $tab.opts readout $w.pw.right.rf status $w.sb] {
+            if {[winfo exists $wd]} { puts $fh [list $name {*}[place_of $wd]] } else { log "no $wd" }
+        }
+        close $fh
+        log "window: windows"
+        # Setup as the guide fills it (Section 4, steps 3 and 4), and the
+        # Populations of the clustering it makes
+        set S(molid) $m
+        ${G}::refresh_molecules
+        set S(sel) $sel
+        set S(fit) 1
+        set S(fitsel) $sel
+        set S(fitframe) $fitframe
+        set S(fitmove) 1
+        ${G}::_fit_changed
+        set S(algorithm) kmeans
+        ${G}::_algorithm_changed
+        set S(k_kmeans) $k
+        set S(p_kmeans_kinit) CompSim
+        ${G}::_params_sync
+        ${G}::_count
+        vmdance run 1
+        vmdance select clear
+        ${G}::show_pane setup
+        ${G}::show_tab populations
+        settle 800
+        grab_win .vmdance [file join $figs view_setup.png]
+        log "view: setup"
+        # Scans, as the guide's scan was asked, and the Elbow
+        set S(eb_from) 2
+        set S(eb_to) 12
+        set S(eb_stab) 1
+        ${G}::show_pane scans
+        ${G}::show_tab elbow
+        grab_win .vmdance [file join $figs view_scans.png]
+        log "view: scans"
+        # Tools, and the Map
+        ${G}::show_pane tools
+        ${G}::show_tab map
+        grab_win .vmdance [file join $figs view_tools.png]
+        log "view: tools"
+        # 3D, every representative drawn, and the Timeline
+        set S(v3d_reps) 1
+        ${G}::draw_changed
+        ${G}::show_pane v3d
+        ${G}::show_tab timeline
+        grab_win .vmdance [file join $figs view_3d.png]
+        set S(v3d_reps) 0
+        ${G}::draw_changed
+        log "view: 3d"
+        # the dialogs that write the tables and the plots (a folder of an
+        # example's: the pictures name none of this machine's; closed unapplied)
+        ${G}::show_pane results
+        ${G}::show_tab populations
+        set S(out_dir) ~/tau/results
+        ${G}::export_dialog
+        update
+        grab_win $w.export [file join $figs dialog_export.png]
+        destroy $w.export
+        set S(fig_dir) ~/tau/figures
+        ${G}::figure_dialog
+        update
+        grab_win $w.figures [file join $figs dialog_figures.png]
+        destroy $w.figures
+        log "dialogs"
+        # the File menu, open on Quick export: opened here as a popup under
+        # the menubar (tk_popup waits until it closes); capture_menu.ps1, in
+        # the background meanwhile, walks it to Quick export by messages to
+        # VMD's own menu windows, takes its picture, and closes it
+        set out [file join $figs menu_file.png]
+        file delete $out
+        wm attributes .vmdance -topmost 1
+        raise .vmdance
+        settle 500
+        set ps [file nativename [file join $here capture_menu.ps1]]
+        exec powershell -NoProfile -ExecutionPolicy Bypass -File $ps [pid] [wm frame .vmdance] [file nativename $out] 7 &
+        tk_popup $w.menu.file [winfo rootx .vmdance] [winfo rooty .vmdance]
+        set end [expr {[clock seconds] + 15}]
+        while {![file exists $out] && [clock seconds] < $end} { settle 200 }
+        settle 1000
+        wm attributes .vmdance -topmost 0
+        log "menu: [file exists $out]"
     } else {
-        log "window: not taken (macOS only; figures/window.png kept)"
+        log "window: not taken (macOS and Windows only; figures/window.png kept)"
     }
     log "done"
 } err]} {

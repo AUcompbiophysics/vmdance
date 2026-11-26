@@ -9,8 +9,8 @@
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{libertinus}
-\usepackage[scaled=0.92,varqu,varl]{inconsolata}
-\usepackage{amssymb}
+\ifdefined\XeTeXversion\AtBeginDocument{\setmonofont[Scale=0.92,BoldFont=Inconsolatazi4-Bold.otf]{Inconsolatazi4-Regular.otf}}\else\usepackage[scaled=0.92,varqu,varl]{inconsolata}\fi
+\ifdefined\XeTeXversion\else\usepackage{amssymb}\fi
 \usepackage[margin=1in,headheight=14pt]{geometry}
 \usepackage{microtype}
 \usepackage{graphicx}
@@ -69,6 +69,18 @@
 \newcommand{\cmd}[1]{\texttt{#1}}
 \newcommand{\Asq}{\AA\textsuperscript{2}}
 \newcommand{\meta}[1]{\textrm{\emph{#1}}}
+% The window's icons (figures/icons, drawn large by icons.py): in the text,
+% and large, for the tables of buttons and plots
+\DeclareRobustCommand{\icon}[1]{\raisebox{-0.35em}{\includegraphics[height=1.4em]{icons/#1.png}}}
+\newcommand{\bigicon}[1]{\includegraphics[width=0.95cm]{icons/#1.png}}
+% A button of the toolbar: its icon large, its name and keys, what it does
+\newcommand{\tbitem}[3]{\par\noindent
+  \begin{minipage}[t]{1.2cm}\vspace{0pt}\bigicon{#1}\end{minipage}%
+  \begin{minipage}[t]{\dimexpr\linewidth-1.2cm\relax}\vspace{0pt}\small\raggedright
+    {\sffamily\bfseries #2}\enspace #3\end{minipage}\par\vspace{0.8ex}}
+% an icon in a table's row, centred on its text
+\newcommand{\tabicon}[1]{\raisebox{-0.38\height}{\includegraphics[width=0.72cm]{icons/#1.png}}}
+\newcommand{\tbgroup}[1]{\par\noindent{\sffamily\footnotesize\bfseries\color{accent}\MakeUppercase{#1}}\par\vspace{0.6ex}}
 
 % Code
 \lstdefinestyle{base}{
@@ -83,6 +95,10 @@
   morecomment=[l]{;\#}}
 \lstdefinestyle{sh}{style=base, language=bash, morekeywords={cmake,ctest,git,brew,pip,python}}
 \lstset{style=base}
+% A cell of the guide's script: the lines of quickstart.tcl from its
+% "# %% <first>" line to its "# %% <next>" line, those two left out
+\lstdefinestyle{cell}{style=tcl, rangeprefix=\#\ \%\%\ , includerangemarker=false}
+\newcommand{\cell}[2]{\lstinputlisting[style=cell, linerange=#1-#2]{quickstart.tcl}}
 
 % A note, and a warning
 \newtcolorbox{note}[1][]{enhanced, breakable, colback=notebg, colframe=accent,
@@ -272,101 +288,302 @@ clusters them too. This guide superposes the frames on one of them, frame
 \begin{figure}[t]
   \centering
   \includegraphics[width=\textwidth]{window_annotated.png}
-  \caption{The VMDance window (macOS), with this guide's clustering: the
+  \caption{The VMDance window (Windows), with this guide's clustering: the
     Results pane, and the Make-up of the trajectory's two halves. (1) The
-    toolbar; (2) the panes: Setup, Results, Scans, Tools, 3D; (3) the plots'
-    tabs; (4) the plot; (5) its options; (6) what the pointer is on; (7) the
-    status line.}
+    toolbar (Section~\ref{sec:toolbar}); (2) the panes: Setup, Results,
+    Scans, Tools, 3D (Section~\ref{sec:panes}); (3) the plots' tabs
+    (Section~\ref{sec:gallery}); (4) the plot; (5) its options; (6) what the
+    pointer is on; (7) the status line.}
   \label{fig:window}
+\end{figure}
+
+Figure~\ref{fig:window} names the window's parts. The toolbar on top holds
+every action; the panes on the left say what to cluster and show what came
+of it; the plot on the right draws the current clustering. Every button shows
+what it does when the pointer rests on it.
+
+\subsection{The toolbar, button by button}
+\label{sec:toolbar}
+
+Each icon is a small picture of what its button does. Left to right:
+
+\begin{multicols}{2}
+\tbgroup{The window}
+\tbitem{panel_left}{Panel}{(Ctrl+Shift+L). A book with its left page
+  open: shows or hides the panes, for a wider plot.}
+\tbitem{panel_right}{Options}{(Ctrl+Shift+O), at the far right. The plot's
+  dials: shows or hides the bar of the plot's options (5 in
+  Figure~\ref{fig:window}).}
+
+\tbgroup{Your work}
+\tbitem{open}{Open}{(Ctrl+O). A folder: opens a saved session, every run,
+  scan and group as you left them.}
+\tbitem{save}{Save}{(Ctrl+S). The floppy disk: keeps the session in a
+  \file{.vmdance} file, so that tomorrow starts where today ended.}
+\tbitem{export}{Export}{(Ctrl+E). A table leaving the window: writes the
+  tables (CSV), the labels, the representatives' structures and each
+  cluster's frames to a folder (Figure~\ref{fig:save}).}
+\tbitem{figure}{Figures}{(Ctrl+P). A chart on a page: writes the plots as
+  PDF, PNG or EPS, sized for a paper's column or a slide
+  (Figure~\ref{fig:save}).}
+
+\tbgroup{Clustering}
+\tbitem{cluster}{Cluster}{(Ctrl+R). Play: clusters the frames as Setup
+  says, in the background. The ring beside Cancel fills as it runs.}
+\tbitem{elbow}{Elbow}{A curve with its knee ringed: clusters again at every
+  k of \ui{Scans}\then\ui{Elbow}, to see where more clusters stop paying.}
+\tbitem{cancel}{Cancel}{Stop: ends the running job, and keeps what was
+  there before. Grey while nothing runs.}
+
+\tbgroup{The plots}
+\noindent{\small The 13 buttons in the middle each show a miniature of their
+  plot, and open it (Ctrl+1 to Ctrl+9 for the first nine):
+  \icon{tab_populations}\,\icon{tab_makeup}\,\icon{tab_timeline}\,\icon{tab_transitions}\,%
+  \icon{tab_residence}\,\icon{tab_compactness}\,\icon{tab_distances}\,%
+  \icon{tab_tree}\,\icon{tab_silhouette}\,\icon{tab_map}\,\icon{tab_profiles}\,%
+  \icon{tab_elbow}\,\icon{tab_sweep}. Table~\ref{tab:plots} says which is
+  which.\par}
+\vspace{1.4ex}
+
+\tbgroup{VMD's 3D window}
+\tbitem{colour}{Colour}{A chain painted in its cluster's colour: paints the
+  molecule by the cluster of the frame VMD shows. Play the trajectory, and
+  the colour follows it.}
+\tbitem{reps}{Reps}{Several chains, each in its colour: draws every
+  cluster's representative at once (Figure~\ref{fig:reps}).}
+\tbitem{goto}{Go}{A target: VMD goes to the selected cluster's
+  representative frame.}
+\tbitem{render}{Render}{A camera: saves VMD's 3D view as a PNG.}
+
+\tbgroup{Help}
+\tbitem{settings}{Settings}{The gear: the backend (CPP-MDANCE's program or
+  its library), the text's size, the theme, the icons' size.}
+\tbitem{help}{Help}{The quick guide, in a window of its own.}
+\end{multicols}
+
+\subsection{The five panes}
+\label{sec:panes}
+
+The tabs above the left panel switch between five panes, each with its own
+icon:
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{@{}c>{\sffamily\bfseries}lL@{}}
+\toprule
+& \normalfont\textbf{Pane} & \textbf{What it holds} \\
+\midrule
+\tabicon{pane_setup} & Setup & What to cluster (the molecule, the atoms, the
+  frames, the fit) and how (the algorithm and its parameters).
+  Figure~\ref{fig:setup}. \\
+\tabicon{pane_results} & Results & The runs, the table of the current one's
+  clusters, and the groups, the map and the profiles.
+  Figure~\ref{fig:window}. \\
+\tabicon{pane_scans} & Scans & The elbow scan (scores at every k, and the
+  stability of NANI's seedings) and the sweep of algorithms and seedings.
+  Figure~\ref{fig:views}a. \\
+\tabicon{pane_tools} & Tools & PRIME's predicted native frame, the clusters'
+  similarity, and frames picked without clustering.
+  Figure~\ref{fig:views}b. \\
+\tabicon{pane_3d} & 3D & How VMD draws the clusters: colours, the
+  representatives, an overlay of the selected clusters.
+  Figure~\ref{fig:views}c. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Step by step}
+\label{sec:steps}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{view_setup.png}
+  \caption{Setup, filled as this guide fills it (steps 3 and 4): the atoms
+    \cmd{resid 3 to 12 and name N CA C O H}, fitted on themselves onto frame
+    \qsFitFrame\ with VMD's coordinates moved, and KMeans NANI seeded by
+    complementary similarity at k~\qsK. On the right, the Populations of the
+    clustering it makes: how many frames each of the \qsK\ clusters holds.}
+  \label{fig:setup}
 \end{figure}
 
 \begin{enumerate}[leftmargin=*,label=\textbf{\arabic*.},itemsep=0.6ex]
 \item \textbf{Load the trajectory.} In VMD, \ui{File}\then\ui{New Molecule}:
-  load \file{aligned_tau.pdb}, then \file{aligned_original_tau_6K.dcd} into
-  the same molecule. The PDB is the topology: it names the atoms. Its
-  coordinates come in as frame 0, which is not part of the trajectory. Delete
-  that first frame: type \cmd{animate delete beg 0 end 0} in VMD's console.
-  The molecule then has the DCD's \qsFrames\ frames.
-\item \textbf{Fit the frames to frame \qsFitFrame}, on the atoms to cluster.
-  Setup's \ui{Fit to the first frame} superposes the frames on the first one
-  clustered; to fit them on another, do it in VMD's console first (the lines
-  of Listing~\ref{lst:script}, step 3):
-\begin{lstlisting}[style=tcl]
-set sel "resid 3 to 12 and name N CA C O H"
-set ref [atomselect top $sel frame 999]
-set fit [atomselect top $sel]
-set all [atomselect top all]
-for {set f 0} {$f < [molinfo top get numframes]} {incr f} {
-    $fit frame $f; $all frame $f; $all move [measure fit $fit $ref]
-}
-\end{lstlisting}
-  VMD's coordinates move: every frame, whole molecule, is superposed on frame
-  \qsFitFrame\ by those atoms. VMD may print \emph{Matrix: Warning: no
-  convergence} for some of them. Its fit is then still within
-  \qsFitWorst\,\AA\ of the best one here.
+  browse to where you saved the two files, and load \file{aligned_tau.pdb},
+  then \file{aligned_original_tau_6K.dcd} into the same molecule. The PDB is
+  the topology: it names the atoms. Its coordinates come in as frame 0, which
+  is not part of the trajectory. Delete that first frame: type
+  \cmd{animate delete beg 0 end 0} in VMD's console. The molecule then has
+  the DCD's \qsFrames\ frames.
 \item \textbf{Open VMDance}: \ui{Analysis}\then\ui{VMDance} (in VMD 1.9,
   \ui{Extensions}\then\ui{Analysis}\then\ui{VMDance}), or type \cmd{vmdance}
-  in VMD's console. Figure~\ref{fig:window} names its parts.
-\item \textbf{Choose what to cluster}, in \ui{Setup}\then\ui{What to cluster}.
-  Atoms: \cmd{resid 3 to 12 and name N CA C O H}, the backbone of residues 3
-  to 12 and its amide hydrogens (\qsAtoms\ atoms). The atoms decide what
-  ``alike'' means: here, the peptide's fold.
+  in VMD's console.
+\item \textbf{Choose what to cluster}, in \icon{pane_setup}\,\ui{Setup}
+  (Figure~\ref{fig:setup}, left). Atoms: \cmd{resid 3 to 12 and name N CA C O
+  H}, the backbone of residues 3 to 12 and its amide hydrogens (\qsAtoms\
+  atoms). The atoms decide what ``alike'' means: here, the peptide's fold.
 
-  Leave \ui{Fit to the first frame} off: the frames are fitted already. The
-  note under it compares a sample of them with the first: \qsAsIs\,\AA\ as they
-  are, \qsFitted\,\AA\ once fitted. They look superposed. (Frames that are not
-  would come far nearer once fitted: the note would turn red-brown.) The run's
-  summary will say \emph{not fitted}: the plugin's own fit is off.
-\item \textbf{Choose the algorithm}, in \ui{Setup}\then\ui{Algorithm}: KMeans
-  NANI, with \ui{Seeding} set to \ui{Complementary similarity}
+  Then the fit. Tick \ui{Fit on}, with the same atoms; set \ui{to frame} to
+  \qsFitFrame, and tick \ui{Move VMD's coordinates}. The first Scan or Cluster
+  then superposes every frame on frame \qsFitFrame\ by those atoms, and moves
+  VMD's coordinates there: every frame, the whole molecule, as an alignment in
+  VMD would (reload the trajectory to undo it). Left unticked, the fit is
+  computed on the values only, and VMD's coordinates stay. The note under the
+  box says which. Once moved, the frames are \qsAsIs\,\AA\ from the first as
+  they are, and \qsFitted\,\AA\ once fitted on it: they look superposed. (With
+  the fit off, the same note warns, in red-brown, of frames that are not.)
+\item \textbf{Choose the algorithm}, lower in Setup: KMeans NANI
+  \, with \ui{Seeding} set to \ui{Complementary similarity}
   (\cmd{CompSim}). NANI then draws its seeds from the densest frames.
-\item \textbf{Ask how many clusters}, in \ui{Scans}\then\ui{Elbow}: k from 2 to
-  12, tick \ui{Stability}, and press \ui{Scan}. The scan clusters at every k.
-  It does so again from NANI's four seedings that draw no random number, to
-  see whether the clusters depend on the seeding.
-\item \textbf{Read the scan} (the Elbow plot, Figure~\ref{fig:gallery}M). It
-  rings the values the scores point to, and the Scans box says them in words.
-  Section~\ref{sec:reading} reads them. Double-click k~\qsK\ in the plot: it
-  becomes the clustering, a run of its own.
-\item \textbf{Read the clusters.} \ui{Results} holds their table: frames,
-  share, MSD, representative frame. Click a cluster: it is drawn on top in
-  every plot. Double-click it: VMD goes to its representative frame. The plots
-  are on the right (Section~\ref{sec:gallery}). Hover one: the line under it
-  says what the pointer is on.
-\item \textbf{See them in 3D.} \ui{3D}\then\ui{Colour by cluster}, then play the
+  \ui{Tolerance} stays 0: k-means runs until no frame changes cluster.
+  MDANCE's Python stops a little before, at scikit-learn's tolerance;
+  \cmd{1e-4} stops there too, and gives its labels exactly.
+\item \textbf{Ask how many clusters}, in \icon{pane_scans}\,\ui{Scans}\then\ui{Elbow}
+  (Figure~\ref{fig:views}a): k from 2 to 12, tick \ui{Stability}, and press
+  \ui{Scan}, or \icon{elbow}\ on the toolbar. The scan clusters at every k. It
+  does so again from NANI's four seedings that draw no random number, to see
+  whether the clusters depend on the seeding.
+\item \textbf{Read the scan} (\icon{tab_elbow}\ Elbow, Figure~\ref{fig:gallery}M).
+  It rings the values the scores point to, and the Scans box says them in
+  words. Section~\ref{sec:reading} reads them. Double-click k~\qsK\ in the
+  plot: it becomes the clustering, a run of its own. (With \ui{Clusters (k)}
+  at \qsK, \icon{cluster}\ Cluster makes the same: Figure~\ref{fig:setup}.)
+\item \textbf{Read the clusters.} \icon{pane_results}\,\ui{Results} holds their
+  table: frames, share, MSD, representative frame. Click a cluster: it is
+  drawn on top in every plot. Double-click it: VMD goes to its representative
+  frame. The plots are on the right (Section~\ref{sec:gallery}). Hover one:
+  the line under it says what the pointer is on.
+\item \textbf{See them in 3D.} \icon{colour}\ Colour, then play the
   trajectory: the structure takes the colour of the current frame's cluster.
-  \ui{Representatives} draws them all at once (Figure~\ref{fig:reps}).
+  \icon{reps}\ Reps draws them all at once (Figure~\ref{fig:reps}). The
+  \icon{pane_3d}\,\ui{3D} pane sets how (Figure~\ref{fig:views}c).
 \item \textbf{Compare the two halves of the run}, in
   \ui{Results}\then\ui{Groups, map and profiles}: press \ui{Halves}. The
-  \ui{Make-up} plot shows each cluster by half (Figure~\ref{fig:window}), and
-  the line under the box says how unlike the halves are. \ui{Map} and
-  \ui{Profiles}, below it, make those two plots.
-\item \textbf{Keep it.} \ui{File}\then\ui{Save session} keeps every run, the
-  scans and the groups. \ui{File}\then\ui{Export results} writes the tables.
-  \ui{File}\then\ui{Create figures} writes the plots as PDF, PNG or EPS, sized
-  for a paper's column or a slide.
+  \icon{tab_makeup}\ Make-up plot shows each cluster by half
+  (Figure~\ref{fig:window}), and the line under the box says how unlike the
+  halves are. \ui{Map} and \ui{Profiles}, below it, make those two plots.
+\item \textbf{Keep it} (Section~\ref{sec:saving}). \icon{save}\ Save keeps
+  every run, the scans and the groups. \icon{export}\ Export writes the
+  tables, \icon{figure}\ Figures the plots.
 \end{enumerate}
+
+\begin{figure}[p]
+  \centering
+  \begin{subfigure}[t]{\textwidth}\centering
+    \includegraphics[width=\textwidth]{view_scans.png}
+    \caption{\icon{pane_scans}\ Scans: the elbow scan, as this guide asks it
+      (k 2 to 12, with the stability), and its \icon{tab_elbow}\ Elbow plot.}
+  \end{subfigure}\\[1.5ex]
+  \begin{subfigure}[t]{0.49\textwidth}\centering
+    \includegraphics[width=\textwidth]{view_tools.png}
+    \caption{\icon{pane_tools}\ Tools, beside the \icon{tab_map}\ Map.}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.49\textwidth}\centering
+    \includegraphics[width=\textwidth]{view_3d.png}
+    \caption{\icon{pane_3d}\ 3D, beside the \icon{tab_timeline}\ Timeline.}
+  \end{subfigure}
+  \caption{More of the window's views, with this guide's clustering.}
+  \label{fig:views}
+\end{figure}
+
+\subsection{Saving tables and figures}
+\label{sec:saving}
+
+\begin{figure}[p]
+  \centering
+  \begin{subfigure}[t]{0.6\textwidth}\centering
+    \vspace{0pt}\includegraphics[width=\textwidth]{menu_file.png}
+    \caption{\ui{File}\then\ui{Quick export}: one thing at once, the table of
+      clusters or the plot on show as CSV, that plot as PDF, PNG or EPS, or
+      the 3D view.}
+    \label{fig:save:menu}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.37\textwidth}\centering
+    \vspace{0pt}\includegraphics[width=\textwidth]{dialog_figures.png}
+    \caption{\icon{figure}\ \ui{File}\then\ui{Create figures}: the plots.}
+    \label{fig:save:figures}
+  \end{subfigure}\\[2ex]
+  \begin{subfigure}[t]{0.92\textwidth}\centering
+    \includegraphics[width=\textwidth]{dialog_export.png}
+    \caption{\icon{export}\ \ui{File}\then\ui{Export results}: the tables (CSV)
+      and the structures.}
+    \label{fig:save:export}
+  \end{subfigure}
+  \caption{Writing what the window shows. Each file says, in its header,
+    how it was made.}
+  \label{fig:save}
+\end{figure}
+
+Three ways write files (Figure~\ref{fig:save}):
+
+\begin{itemize}
+  \item \icon{export}\ \textbf{Export} (\ui{File}\then\ui{Export results},
+    Ctrl+E) writes the tables, as CSV, to a folder: tick what you want. The
+    clusters, every frame's cluster, the frames nearest each representative,
+    the transitions, the residence, the silhouette, the distances, the tree;
+    and, when made, the groups, the map, the profiles, the scans. It also
+    writes the representatives' structures, and each cluster's frames as a
+    trajectory of its own (DCD, with a PDB of the atoms).
+  \item \icon{figure}\ \textbf{Figures} (\ui{File}\then\ui{Create figures},
+    Ctrl+P) writes the plots you tick, as PDF, PNG or EPS. \ui{For} sizes
+    them for the screen, a paper's column or both columns, or a slide; the
+    text's size is in points.
+  \item \ui{File}\then\ui{Quick export} writes one thing, at once: the table
+    of clusters, the data of the plot on show (CSV), that plot (PDF, PNG,
+    EPS), or the 3D view (PNG).
+\end{itemize}
 
 % ---------------------------------------------------------------------------
 \section{In a script}
 \label{sec:script}
 
-Every step above is a VMD or \cmd{vmdance} command. The script below,
-\cmd{quickstart.tcl} (beside this guide's source), runs them all. It also
-asks DIVINE, HELM and eQual for a second opinion, and sweeps three algorithms
-and two seedings. Run it in the folder of the two files:
+Every step above is a VMD or \cmd{vmdance} command. The script
+\cmd{quickstart.tcl} (beside this guide's source) runs them all, and also
+asks DIVINE, HELM and eQual for a second opinion and sweeps three algorithms
+and two seedings. Its cells follow, each with what it does; a line
+\cmd{\# \%\% \meta{name}} starts each in the file, as in VS Code's or
+Jupyter's scripts. Run the whole script in the folder of the two files:
 
 \begin{lstlisting}[style=sh]
 vmd -dispdev text -e quickstart.tcl
 \end{lstlisting}
 
-Or paste it, a line at a time, into VMD's console: the window, when it is
-open, shows what the command did. It took about \qsMinutes\ minute(s) here
+or paste it into VMD's console a cell at a time: the window, when it is
+open, shows what each did. The whole took about \qsMinutes\ minute(s) here
 (\qsMachine), most of it the elbow scan and the sweep.
 
-\lstinputlisting[style=tcl,caption={\cmd{quickstart.tcl}: the whole analysis of
-  this guide.},label=lst:script,captionpos=b,numbers=left,numberstyle=\tiny\color{muted},
-  numbersep=8pt,xleftmargin=18pt,framexleftmargin=18pt]{quickstart.tcl}
+\begin{warning}
+  \textbf{Set the paths to your files} in the \emph{load} cell. As the script
+  has them, \cmd{set pdb aligned\_tau.pdb} and \cmd{set dcd
+  aligned\_original\_tau\_6K.dcd}, VMD looks for the two files in the folder it
+  runs in: VMD's console says which (\cmd{pwd}), and \cmd{cd} changes it. Or
+  give each file's full path, with forward slashes, on Windows too:
+  \cmd{set pdb C:/Users/me/tau/aligned\_tau.pdb}.
+\end{warning}
+
+\newcommand{\cellhead}[2]{\par\medskip\noindent{\sffamily\bfseries\color{accent}#1}\enspace{\small #2}\par\nopagebreak}
+
+\cellhead{start}{The plugin.}
+\cell{start}{load}
+\cellhead{load}{The trajectory: the PDB names the atoms, the DCD brings the
+  frames, and the PDB's own frame goes.}
+\cell{load}{atoms}
+\cellhead{atoms}{What to cluster (step 3).}
+\cell{atoms}{fit}
+\cellhead{fit}{The fit: every frame onto frame \qsFitFrame, VMD's coordinates
+  moved (step 3). Kept in a list, it is given to the first command below.}
+\cell{fit}{elbow}
+\cellhead{elbow}{How many clusters (steps 5 and 6): the elbow scan, the
+  frames' superposition, and what the scan suggests.}
+\cell{elbow}{cluster}
+\cellhead{cluster}{The clustering at k~\qsK, and its clusters.}
+\cell{cluster}{halves}
+\cellhead{halves}{Has the run converged? (step 9).}
+\cell{halves}{second}
+\cellhead{second}{A second opinion: three more algorithms, and a sweep.}
+\cell{second}{keep}
+\cellhead{keep}{Keep it (step 10).}
+\cell{keep}{end}
+
 
 Text-mode VMD prints what each command returns, as its console does. The
 \cmd{puts} lines print the rest, and the scan says how far it is as it runs.
@@ -388,7 +605,7 @@ The script leaves two things in the folder:
 \begin{table}[H]
 \centering
 \small
-\caption{The elbow scan (Listing~\ref{lst:script}, step 4; Figure~\ref{fig:gallery}M). The stability is
+\caption{The elbow scan (the script\'s \emph{elbow} cell, Section~\ref{sec:script}; Figure~\ref{fig:gallery}M). The stability is
   the mean adjusted Rand index of every two of NANI's four deterministic
   seedings (1: the same clusters, whatever the seeding).}
 \label{tab:elbow}
@@ -423,8 +640,9 @@ These are three readings, and they do not agree.
 
 None of these is wrong: they answer different questions. This guide takes
 k~\qsK, as MDANCE's own tutorial does, for a finer look at the shapes the
-peptide takes than two clusters give. It is where Davies--Bouldin dips most
-sharply (\qsKDb; Calinski--Harabasz \qsKCh). But its stability is
+peptide takes than two clusters give. Davies--Bouldin dips there too:
+\qsKDb, between \qsKDbBefore\ at k~5 and \qsKDbAfter\ at k~7
+(Calinski--Harabasz \qsKCh). But its stability is
 \qsKStability: the four seedings do not make quite the same six clusters,
 where at k~\qsStableLast\ they nearly do (\qsStableLastValue). Say so when
 you report them.
@@ -487,6 +705,34 @@ Hover a plot in the window: the line under it says what the pointer is on.
 they are measured) or as lengths (\AA), and the time per frame, so that the
 Timeline and the Residence read in nanoseconds.
 
+\begin{table}[!htb]
+\centering
+\small
+\caption{The 13 plots: the button that opens each (Ctrl+1 to Ctrl+9 for
+  the first nine), and the question it answers. Figure~\ref{fig:gallery}
+  shows each for this guide's clustering.}
+\label{tab:plots}
+\begin{tabularx}{\textwidth}{@{}c>{\sffamily\bfseries}lLr@{}}
+\toprule
+& \normalfont\textbf{Plot} & \textbf{It answers} & \textbf{Keys} \\
+\midrule
+\tabicon{tab_populations} & Populations & How many frames does each cluster hold? & Ctrl+1 \\
+\tabicon{tab_makeup} & Make-up & Where did each cluster's frames come from (a group: a half, a replica)? & Ctrl+2 \\
+\tabicon{tab_timeline} & Timeline & Which cluster is the trajectory in, frame by frame? & Ctrl+3 \\
+\tabicon{tab_transitions} & Transitions & From each cluster, where does the trajectory go next? & Ctrl+4 \\
+\tabicon{tab_residence} & Residence & How long does it stay in a cluster once there? & Ctrl+5 \\
+\tabicon{tab_compactness} & Compactness & How tight is each cluster? & Ctrl+6 \\
+\tabicon{tab_distances} & Distances & How far apart are the clusters? & Ctrl+7 \\
+\tabicon{tab_tree} & Tree & How do the clusters join? & Ctrl+8 \\
+\tabicon{tab_silhouette} & Silhouette & Does each frame sit well in its cluster? & Ctrl+9 \\
+\tabicon{tab_map} & Map & Where are the frames on their first two principal components? & \\
+\tabicon{tab_profiles} & Profiles & Which residues move, cluster by cluster? & \\
+\tabicon{tab_elbow} & Elbow & How many clusters? & \\
+\tabicon{tab_sweep} & Sweep & Which algorithm, seeding and k score best? & \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
 % a panel of the gallery, its letter at its top left (#1: its width, #2: the
 % plot, #3: the letter); the panels' descriptions are in the figure's caption
 \newcommand{\gpanel}[3]{%
@@ -504,18 +750,18 @@ Timeline and the Residence read in nanoseconds.
   \gpanel{\half}{transitions}{C}\hfill\gpanel{\half}{residence}{D}\\[1.2ex]
   \gpanel{\half}{compactness}{E}\hfill\gpanel{\half}{distances}{F}
   \caption{The 13 plots of this guide's clustering, KMeans NANI at k~\qsK\
-    (Listing~\ref{lst:script}), as \cmd{vmdance figures} writes them, each
+    (Section~\ref{sec:script}), as \cmd{vmdance figures} writes them, each
     cluster in its colour.
-    (A)~\textbf{Populations}: how many frames each cluster holds.
-    (B)~\textbf{Make-up}: where each cluster's frames came from; here, the
+    (A)~\icon{tab_populations}\,\textbf{Populations}: how many frames each cluster holds.
+    (B)~\icon{tab_makeup}\,\textbf{Make-up}: where each cluster's frames came from; here, the
     first (blue) and the second (green) half of the trajectory.
-    (C)~\textbf{Transitions}: from each cluster (rows), the share of its
+    (C)~\icon{tab_transitions}\,\textbf{Transitions}: from each cluster (rows), the share of its
     frames in each cluster one frame later.
-    (D)~\textbf{Residence}: how long the trajectory stays in a cluster once it
+    (D)~\icon{tab_residence}\,\textbf{Residence}: how long the trajectory stays in a cluster once it
     enters it (the mean, in frames).
-    (E)~\textbf{Compactness}: how tight each cluster is (MDANCE's MSD within,
+    (E)~\icon{tab_compactness}\,\textbf{Compactness}: how tight each cluster is (MDANCE's MSD within,
     \Asq).
-    (F)~\textbf{Distances}: how far apart the clusters' mean structures are
+    (F)~\icon{tab_distances}\,\textbf{Distances}: how far apart the clusters' mean structures are
     (RMSD\textsuperscript{2}, \Asq). Continued overleaf.}
   \label{fig:gallery}
 \end{figure}
@@ -527,15 +773,15 @@ Timeline and the Residence read in nanoseconds.
   \gpanel{\half}{profiles}{I}\hfill\gpanel{\half}{tree}{J}\\[1.2ex]
   \gpanel{\textwidth}{timeline}{K}
   \caption{The 13 plots (continued).
-    (G)~\textbf{Silhouette}: whether each frame is nearer its own cluster than
+    (G)~\icon{tab_silhouette}\,\textbf{Silhouette}: whether each frame is nearer its own cluster than
     the next, from the clusters' mean structures; dashed, the mean.
-    (H)~\textbf{Map}: the frames on their first two principal components, by
+    (H)~\icon{tab_map}\,\textbf{Map}: the frames on their first two principal components, by
     cluster; the representatives ringed.
-    (I)~\textbf{Profiles}: each cluster's RMSF, residue by residue: where its
+    (I)~\icon{tab_profiles}\,\textbf{Profiles}: each cluster's RMSF, residue by residue: where its
     frames move.
-    (J)~\textbf{Tree}: how the clusters join: the average linkage of their
+    (J)~\icon{tab_tree}\,\textbf{Tree}: how the clusters join: the average linkage of their
     mean structures (for HELM, its own merges).
-    (K)~\textbf{Timeline}: the cluster of every frame. With more frames than
+    (K)~\icon{tab_timeline}\,\textbf{Timeline}: the cluster of every frame. With more frames than
     pixels, the darker, the larger the share of the frames there that are in
     the cluster. Continued overleaf.}
 \end{figure}
@@ -546,11 +792,11 @@ Timeline and the Residence read in nanoseconds.
   \gpanel{\textwidth}{sweep}{L}\\[2ex]
   \gpanel{\textwidth}{elbow}{M}
   \caption{The 13 plots (continued).
-    (L)~\textbf{Sweep}: which algorithm, seeding and k score best:
+    (L)~\icon{tab_sweep}\,\textbf{Sweep}: which algorithm, seeding and k score best:
     Calinski--Harabasz of three algorithms and two seedings at k 2 to 8
     (darker: higher; outlined: the best).
-    (M)~\textbf{Elbow}: how many clusters. The scan of
-    Listing~\ref{lst:script}, step 4: Calinski--Harabasz (blue),
+    (M)~\icon{tab_elbow}\,\textbf{Elbow}: how many clusters. The scan of
+    script's \emph{elbow} cell: Calinski--Harabasz (blue),
     Davies--Bouldin (red) and the stability across NANI's seedings (bars);
     ringed where they point; dotted, the clustering (Table~\ref{tab:elbow}).}
 \end{figure}
@@ -602,10 +848,15 @@ eQual & clusters within a radius of their seeds; the rest is noise &
 \begin{itemize}
   \item \textbf{The frames must be superposed.} MDANCE clusters coordinates as
     they are. Frames that drift separate by where the molecule is, not by its
-    shape. \cmd{-fit \meta{selection}} (\ui{Fit to the first frame}) superposes
-    them on the first one clustered, and VMD's own coordinates do not move. To
-    superpose them on another frame, fit them in VMD first
-    (Listing~\ref{lst:script}, step 3).
+    shape. \cmd{-fit \meta{selection}} (\ui{Fit on}) superposes them on the
+    first one clustered, or on frame \cmd{-fitframe \meta{f}} (\ui{to frame}).
+    The fit is computed on the values, and VMD's own coordinates do not move,
+    unless \cmd{-fitmove 1} (\ui{Move VMD's coordinates}) moves them there
+    (the script's \emph{fit} cell).
+  \item \textbf{k-means converges.} CPP-MDANCE's KMeans NANI runs until no
+    frame changes cluster; MDANCE's Python stops at scikit-learn's tolerance,
+    and on a slowly converging trajectory a few frames can end elsewhere.
+    \cmd{-tol 1e-4} (\ui{Tolerance}) stops where MDANCE does, for its labels.
   \item \textbf{The metric is MSD}, MDANCE's mean square deviation, for
     coordinates. The other indices are for fingerprint-like data; DIVINE and
     eQual take MSD only.
@@ -697,7 +948,7 @@ changes, and an error names the option and what to change.
 \normalfont\textbf{Command} & \textbf{What it does} \\
 \midrule
 vmdance & opens the window \\
-vmdance -mol top -sel "name CA" -algorithm kmeans -k 6 & clusters (a new run); also \cmd{-fit}, \cmd{-first}, \cmd{-last}, \cmd{-step} and the algorithm's parameters \\
+vmdance -mol top -sel "name CA" -algorithm kmeans -k 6 & clusters (a new run); also \cmd{-fit}, \cmd{-fitframe}, \cmd{-fitmove}, \cmd{-first}, \cmd{-last}, \cmd{-step} and the algorithm's parameters \\
 vmdance alignment | radii & do the frames look superposed? A range for eQual's radius \\
 vmdance elbow -from 2 -to 12 -stability 1 & the scores (and the stability) at every k \\
 vmdance elbow suggest | elbow load 3 & where the scores point; that k made the clustering \\
@@ -727,8 +978,9 @@ Whoever reads your clustering needs:
 
 \begin{itemize}
   \item the atoms, and the superposition: fitted or not, on which atoms, and
-    onto which frame (here frame \qsFitFrame, in VMD, before clustering: the
-    plugin's own fit was off);
+    onto which frame (here frame \qsFitFrame, VMD's coordinates moved there);
+  \item for k-means, its tolerance: 0, to convergence (here), or MDANCE's
+    \cmd{1e-4};
   \item the frames (all, a range, every n-th) and their time apart;
   \item the algorithm, its parameters, and the backend: CPP-MDANCE's version or
     commit;
@@ -769,7 +1021,7 @@ DIVINE is not offered & CPP-MDANCE is older than its PR \#52: update it, and bui
 The molecule has 6002 frames, not 6001 & The PDB's own frame:
   \cmd{animate delete beg 0 end 0}. \\
 \addlinespace
-The note under \ui{Fit to the first frame} turns red-brown & The frames are not
+The note under \ui{Fit on} turns red-brown & The frames are not
   superposed: tick the box (\cmd{-fit \meta{selection}}). \\
 \addlinespace
 \emph{-k 10: NANI \ldots\ seeds its 10 clusters from the densest 10\% of the 60 frames}
@@ -850,7 +1102,7 @@ parameter, every plot, the command, the files, and the plugin's limits.
 \vfill
 {\footnotesize\color{muted}
 Every number in this guide was made by its own script
-(Listing~\ref{lst:script}), with VMDance \qsVersion, CPP-MDANCE (commit
+(Section~\ref{sec:script}), with VMDance \qsVersion, CPP-MDANCE (commit
 \qsBackendCommit) and VMD \qsVMD\ on \qsArch\ (\qsMachine). The guide's
 source is in the plugin's repository, in \cmd{quickstart-guide/}: \cmd{make
 check} there makes its numbers again, and compares them with these.\par}

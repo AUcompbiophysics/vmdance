@@ -8,25 +8,28 @@ online documentation: it reads two of that folder's diagrams and the logo,
 and writes nothing there.
 
 The analysis: the PDB as the topology, its own frame deleted after the DCD
-is loaded (6001 frames); every frame fitted on frame 999 in VMD, on
+is loaded (6001 frames); every frame fitted on frame 999 by VMDance, which moves VMD's coordinates there (`-fitframe 999 -fitmove 1`), on
 `resid 3 to 12 and name N CA C O H` (50 atoms); an elbow scan with the
 stability of NANI's seedings; KMeans NANI at k 6, as MDANCE's own tutorial
-(Davies-Bouldin's sharpest dip; the seedings agree at k 2 and 5: the guide
+(a dip of Davies-Bouldin's; the seedings agree at k 2 and 5: the guide
 says so); the two halves as
 groups; DIVINE, HELM, eQual and a sweep for a second opinion.
 
 | File | What it is |
 | --- | --- |
 | `vmdance-quickstart.tex` | the guide (LaTeX) |
-| `quickstart.tcl` | the guide's script, printed in it as it is |
+| `quickstart.tcl` | the guide's script, printed in it as it is, cell by cell (its `# %% name` lines) |
 | `numbers.tcl` | runs that script in text-mode VMD, and writes every number the guide quotes |
 | `numbers.tex` | those numbers, as LaTeX macros (made: do not edit) |
 | `bench.tcl` | times the same jobs with CPP-MDANCE's program and with its library |
 | `bench.tex` | those times, as LaTeX macros (made: do not edit) |
 | `figures.tcl` | runs the same script in VMD with its window, and writes `figures/` |
-| `figures/` | the gallery (`gallery_<plot>.pdf`), the representatives (`main_3d.png`), the window (`window*.png`) (made: do not edit) |
+| `figures/` | the gallery (`gallery_<plot>.pdf`), the representatives (`main_3d.png`), the window (`window*.png`), and on Windows its views (`view_*.png`), the export dialogs (`dialog_*.png`) and the File menu (`menu_file.png`) (made: do not edit) |
+| `figures/icons/` | the window's icons drawn large, for the tables of buttons and plots (made by `icons.py`: do not edit) |
+| `icons.py` | draws the plugin's icons (`../vmdance/icons/make_icons.py`) at 128 px (Pillow) |
+| `capture_menu.ps1` | opens the File menu on Quick export and takes its picture (Windows) |
 | `annotate.py` | numbers the window's parts, and crops the 3D view to the molecule (Pillow) |
-| `macos_windows.swift` | lists VMD's windows, so that `screencapture` takes the VMDance window alone (macOS) |
+| `macos_windows.swift` | lists VMD's windows, so that `screencapture` takes the VMDance window alone (macOS); on Windows the pictures are taken by `../docs/tools/capture_win.ps1` |
 | `Makefile` | builds it all |
 
 ## Build the PDF
@@ -37,6 +40,9 @@ Needs pdfLaTeX and latexmk (TeX Live), with the packages `libertinus`,
 ```sh
 make            # vmdance-quickstart.pdf, from numbers.tex and figures/
 ```
+
+XeLaTeX builds it too, Tectonic (one program, which fetches the packages) among
+them: `tectonic -X compile --outdir build vmdance-quickstart.tex`.
 
 ## Make the numbers and the figures again
 
