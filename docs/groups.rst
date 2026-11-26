@@ -89,13 +89,13 @@ both have the same share of their frames in every cluster. It is 0.69
 
 The window writes it under the Groups box, for the two most different
 groups, with the cluster whose share differs most between them. For the
-tau peptide's two halves at k 3: *First and second: divergence 0.006 (0:
-the same shares of the clusters; 0.69: no cluster in common); cluster 1
-differs most, 32.1% of first against 22.3% of second*.
+tau peptide's two halves at k 6 (:doc:`tutorial`): *First and second:
+divergence 0.009 (0: the same shares of the clusters; 0.69: no cluster in
+common); cluster 2 differs most, 14.7% of first against 8.4% of second*.
 
 ``vmdance groups compare`` gives every pair, and the sentence
 (``words``). Each pair, as in
-``pairs {{first second 0.006155 0.09841 1}}``, is:
+``pairs {{first second 0.009046 0.06369 2}}``, is:
 
 - the two groups;
 - their divergence;
@@ -111,7 +111,7 @@ Make-up
    :alt: The Make-up plot: each cluster's frames stacked by group.
    :width: 100%
 
-   Each cluster of the tau peptide (k 3) by the half of the trajectory its
+   Each cluster of the tau peptide (k 6) by the half of the trajectory its
    frames came from.
 
 The **Make-up** plot stacks each cluster's frames by group, or each

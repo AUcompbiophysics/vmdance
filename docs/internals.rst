@@ -200,6 +200,50 @@ window shows it. It yields again after the call, since VMD reads a Cancel
 pressed during the call only then. The job stops there, before it goes on
 or publishes (``lib_most`` counts the call once it is made).
 
+A library of CPP-MDANCE's second interface (``::mdance::info`` says API
+2: ``Backend::lib_api``, read once when it is loaded) takes the other path,
+``Job::_call_v2``:
+
+- The job's coordinates go into one dataset of the library's
+  (``lib_data``: ``::mdance::data create``, then ``$d frame i row`` for the
+  rows ``Coords::each`` reads, the program's CSV's numbers), keyed on the
+  extraction like ``lib_rows`` and freed when the job ends
+  (``_free_lib_data``). A scan's every k, and HELM's first clustering,
+  use the same dataset.
+- Each call runs as a job of the library's (``::mdance::job start``), on
+  a thread of its own. The plugin's job yields every 100 ms while it runs,
+  so VMD draws and answers. It posts the call's progress (the library's
+  fraction, within the step's share). A Cancel cancels the library's job,
+  which stops within a fraction of a second; the plugin's job then fails
+  ``cancelled``, nothing published.
+- ``Job::_library_fits`` checks the memory only (about 40 bytes a
+  coordinate at a call's peak: ``lib2_peak``); the library makes no text.
+  ``Job::_library_divine`` is not asked: the library v2 fails such a split
+  with a message, as the program does. ``Job::_divine_repeats`` still is:
+  the program may be of the first interface.
+- ``Backend::algorithms`` reads DIVINE from ``::mdance::info`` instead of
+  asking ``::mdance::divine``.
+- An elbow scan of KMeans NANI, DIVINE or HELM makes its values of k at
+  once, as one call (``::mdance::scan``, on the library's threads:
+  ``Job::_scan_v2``). The values are those that would be called: none
+  refused already, none the checks before a call refuse. Its answers wait
+  in ``scanned``, keyed on the request (k, metric, parameters). The loop of
+  ``_do_elbow`` then goes on as before, ``_cluster`` reading each value's
+  answer, or error, from there: the checks after a call, the records, the
+  scores and the "not run" values are the same. Cancelled, the values the
+  scan made are kept as the partial scan, as those before a Cancel are with
+  one call a value. The library runs a scan's largest values first, which
+  keeps its threads busy to the end, so a cancelled scan kept its largest:
+  k 185 to 200 of 2 to 200. An elbow of more than 24 values
+  (``Job::scan_whole``) is scanned in chunks of 16 (``scan_chunk``), the
+  smallest first: a Cancel keeps the low end, the part of an elbow that is
+  read. The chunks cost 5–9% (tau's heavy atoms, k from 2 to 40: 13.1 s,
+  12.6 s as one scan). An elbow with ``-stability`` (its other seedings are
+  called at each k) and eQual's radii keep one call a value.
+
+tests/test_library_v2.tcl tests this path; tests/test_hardening2_h3.tcl
+tests the first interface's, and skips for a library v2.
+
 ``GUI::_progress`` shows a new step at once. Only the same step's counts
 (its text but for its numbers) are shown at most every 250 ms.
 
@@ -383,7 +427,7 @@ Where each part of the plugin, its tests and its documentation is::
                           the clusters' shares window by window, the groups' divergence, linkage
      lib/analysis.tcl     requests and their checks; the jobs (cluster, elbow, sweep, adopt, import, PRIME, similarity, map, profiles, radii, pick); the backend's output checked
      lib/results.tcl      the clusterings in memory, runs, scans, picks, the selection, queries
-     lib/session.tcl      session files; the MDANCE plugin's, imported
+     lib/session.tcl      session files
      lib/export.tcl       result files: tables, structures
      lib/viz3d.tcl        the 3D drawing: colour by cluster, representatives, overlay, picks
      lib/fonts.tcl        one font family and size
@@ -400,7 +444,7 @@ Where each part of the plugin, its tests and its documentation is::
      common.tcl           shared: paths, the systems, the backends, check
      fake_mdance_cli      a deterministic stand-in for mdance-cli, with hooks for failures
      fake_mdance_cli.bat  runs it with Python on Windows (Tcl runs no script by its #! line there)
-     fixtures/            small multi-model PDBs; sessions of the MDANCE plugin (make_old_sessions.tcl)
+     fixtures/            small multi-model PDBs
      test_core.tcl        the JSON reader, parameters and checks, arguments, label files, a result's checks, runs, sessions as data (tclsh or VMD)
      test_jobs.tcl        the jobs with the fake backend: requests, frames, output checks, failures, Cancel, scans, questions, the coordinates
      test_results.tcl     the command's questions, runs, the 3D drawing, exports and structures
@@ -415,6 +459,8 @@ Where each part of the plugin, its tests and its documentation is::
                           or deleted under a clustering, the drawing and the picks, a selection's atoms, imports
      test_hardening2_*.tcl  what the reviews of the second round's fixes found, a suite each (fx_g1 to fx_g5, g6 to g9, h1, oi, h3,
                           h4: docs/tests.rst says what each keeps); g9's, what the window's fixes ask of the core
+     test_library_v2.tcl  a library of CPP-MDANCE's second interface: one dataset a job, its calls as jobs (Cancel, errors,
+                          the event loop meanwhile), the program's answers (the real backend; skips for a library of the first)
      test_groups.tcl      the groups and their colours, the make-up, the map (numpy's PCA), the profiles, the scans' stability,
                           eQual's radius scan, HELM's merges' heights, each against a direct computation (the real backend)
      test_ux.tcl          what the review of the window's use added to the core and the command: alignment, timeline, the silhouette
@@ -435,9 +481,11 @@ Where each part of the plugin, its tests and its documentation is::
      _static/figures/     the screenshots; _static/diagrams/: the diagrams (SVG and PNG)
      diagrams/            the flows' Graphviz sources
      _static/data/        the tutorial's numbers (tutorial_numbers.txt)
+     _static/icons/       the window's icons drawn large (tools/icons.py, from vmdance/icons/make_icons.py): the pages' and the quick-start guide's
      tools/make_logo.py   makes the logo's dark copies, its mark, the PNGs and the window's icon, from the design's SVGs
-     tools/capture.tcl    takes the screenshots (MDANCE's tau peptide); annotate.py numbers the window's parts
+     tools/capture.tcl    takes the screenshots (the tau peptide, the quick-start guide's setup); annotate.py numbers the window's parts
      tools/capture_win.ps1  a window's picture on Windows, for capture.tcl
+     tools/capture_menu.ps1  the File menu's picture, open on Quick export (Windows), for capture.tcl and the guide's figures.tcl
      tools/make_diagrams.py  draws the diagrams (matplotlib, and dot for the flows)
      tools/tutorial_numbers.tcl  the tutorial's numbers; gen_parameters.tcl: the parameters page
    TESTING.md             what to check by hand

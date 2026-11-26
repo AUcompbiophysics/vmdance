@@ -24,11 +24,11 @@ a clustering of the frames as they are.
 
 The drawings:
 
-- **Colour by cluster**: the atoms in the colour of the cluster of VMD's
+- |icon-colour| **Colour by cluster**: the atoms in the colour of the cluster of VMD's
   current frame (of the clustered frame at or before it). It follows the
   trajectory as it plays, or as a movie is made. Noise, and frames outside
   the clustered ones, are grey.
-- **Every cluster's representative**: one representation per cluster,
+- |icon-reps| **Every cluster's representative**: one representation per cluster,
   drawn at its representative frame, in its colour — the clusters' typical
   structures, superposed as the trajectory has them.
 - **Overlay**: the selected clusters' frames nearest their representative

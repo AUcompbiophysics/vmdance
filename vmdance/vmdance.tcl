@@ -2,7 +2,7 @@
 # VMDance - MDANCE clustering of a trajectory, in VMD
 #
 #   GUI:        Extensions > Analysis > VMDance, or `vmdance`
-#   Scripting:  vmdance -mol top -sel "name CA" -first 0 -last -1 -step 1 ?-fit sel? \
+#   Scripting:  vmdance -mol top -sel "name CA" -first 0 -last -1 -step 1 ?-fit sel ?-fitframe f? ?-fitmove 0|1?? \
 #                   -algorithm kmeans|divine|helm|equal ?-k n? ?-metric MSD? ?parameters? ?-label text? ?-quiet 1?
 #               vmdance help ?subcommand?
 #               vmdance info | algorithms | parameters ?algorithm? | cancel
@@ -120,8 +120,8 @@ proc vmdance {args} {
 
 # The subcommands: how each is called, and what it does (vmdance help).
 variable ::VMDance::help_text {
-    cluster      {"vmdance -mol top -sel \"name CA\" ?-fit sel? ?-first 0? ?-last -1? ?-step 1? ?-algorithm kmeans|divine|helm|equal? ?-k n? ?-metric MSD? ?the algorithm's parameters? ?-label text? ?-quiet 1?"
-                  "cluster the frames of a molecule by the coordinates of its atoms -sel (fitted on -fit first, when given); the clustering becomes a run"}
+    cluster      {"vmdance -mol top -sel \"name CA\" ?-fit sel ?-fitframe f? ?-fitmove 0|1?? ?-first 0? ?-last -1? ?-step 1? ?-algorithm kmeans|divine|helm|equal? ?-k n? ?-metric MSD? ?the algorithm's parameters? ?-label text? ?-quiet 1?"
+                  "cluster the frames of a molecule by the coordinates of its atoms -sel (fitted on -fit first, when given: onto frame -fitframe, the first clustered by default; -fitmove 1 moves VMD's coordinates onto it, every frame and atom, 0 fits the values only); the clustering becomes a run"}
     help         {"vmdance help ?subcommand?" "the subcommands, or one's usage"}
     info         {"vmdance info" "the current clustering: its run, input, algorithm, clusters' sizes and scores"}
     algorithms   {"vmdance algorithms" "the algorithms, and which this backend has"}
@@ -129,7 +129,7 @@ variable ::VMDance::help_text {
     backend      {"vmdance backend ?-mode auto|cli|library? ?-cli path? ?-library path? | backend try ?options?" "the CPP-MDANCE backend in use, or set it"}
     cancel       {"vmdance cancel" "stop the job that is running"}
     alignment    {"vmdance alignment ?-mol m? ?-sel text? ?-first f? ?-last l? ?-step s?" "whether the frames look superposed: how far a sample is from the first frame as it is, and once fitted"}
-    radii        {"vmdance radii ?-mol m? ?-sel text? ?-fit text? ?-first f? ?-last l? ?-step s?" "a range to scan eQual's radius over, from the distances between a sample of the frames"}
+    radii        {"vmdance radii ?-mol m? ?-sel text? ?-fit text ?-fitframe f? ?-fitmove 0|1?? ?-first f? ?-last l? ?-step s?" "a range to scan eQual's radius over, from the distances between a sample of the frames"}
     clusters     {"vmdance clusters ?-sort cluster|size|msd?" "the table of the clusters: frames, share, MSD, mean RMSD² from the representative, representative frame"}
     get          {"vmdance get cluster" "a cluster in full: its numbers and its frames"}
     labels       {"vmdance labels" "{frame cluster ...} of every clustered frame (-1: in no cluster)"}
@@ -267,7 +267,7 @@ proc ::VMDance::_cluster {what c} {
 }
 
 # The input options of a request, and the clustering ones.
-variable ::VMDance::input_opts {-mol top -sel "name CA" -fit "" -first 0 -last -1 -step 1}
+variable ::VMDance::input_opts {-mol top -sel "name CA" -fit "" -fitframe "" -fitmove 0 -first 0 -last -1 -step 1}
 variable ::VMDance::cluster_opts {-algorithm kmeans -k "" -metric MSD}
 
 # Split -option value pairs into a request: the known options, and the
@@ -335,7 +335,7 @@ proc ::VMDance::_api_cluster {args} {
 proc ::VMDance::_api_alignment {args} {
     set what "vmdance alignment"
     lassign [_request $what $args {}] req
-    if {[dict size [dict get $req params]] || [dict exists $req algorithm] || [dict exists $req k] || [dict exists $req metric] || [_get $req fit ""] ne ""} {
+    if {[dict size [dict get $req params]] || [dict exists $req algorithm] || [dict exists $req k] || [dict exists $req metric] || [_get $req fit ""] ne "" || [_get $req fitframe ""] ne "" || [_get $req fitmove 0] ne "0"} {
         error "$what: its options are -mol, -sel, -first, -last and -step (it fits the frames itself)"
     }
     if {[catch {::VMDance::Job::check_input [dict remove $req params]} q]} { error "$what: $q" }
@@ -454,7 +454,7 @@ proc ::VMDance::_api_info {args} {
     set a $::VMDance::Results::A
     set q [dict get $a request]
     set fr [dict get $a frames]
-    dict create run $::VMDance::Results::current molid [dict get $q mol] sel [dict get $q sel] fit [dict get $q fit] \
+    dict create run $::VMDance::Results::current molid [dict get $q mol] sel [dict get $q sel] fit [dict get $q fit] fitframe [_get $q fitframe ""] fitmove [_get $q fitmove 0] \
         frames [llength $fr] first [lindex $fr 0] last [lindex $fr end] step [dict get $q step] natoms [dict get $a natoms] \
         algorithm [dict get $q algorithm] k [dict get $q k] metric [dict get $q metric] params [dict get $q params] \
         nclusters [dict get $a nclusters] sizes [dict get $a sizes] noise [::VMDance::Results::noise] \
@@ -701,7 +701,11 @@ proc ::VMDance::_scan_rows {s} {
 # algorithm with the parameters (and metric) that are not its defaults.
 proc ::VMDance::_input_said {req} {
     set s "[llength [dict get $req frames]] frames of [dict get $req sel] ([dict get $req natoms] atoms) of molecule [dict get $req mol]"
-    if {[dict get $req fit] ne ""} { append s ", fitted on [dict get $req fit]" }
+    if {[dict get $req fit] ne ""} {
+        append s ", fitted on [dict get $req fit]"
+        if {[_get $req fitframe ""] ne ""} { append s " to frame [dict get $req fitframe]" }
+        if {[_get $req fitmove 0]} { append s " (VMD's coordinates moved)" }
+    }
     return $s
 }
 proc ::VMDance::_algo_said {a params metric} {
@@ -817,7 +821,7 @@ proc ::VMDance::_api_elbow {args} {
     set said [dict get $req params]
     if {[dict get $req algorithm] eq "equal"} { set said [dict remove $said threshold] }
     _say $quiet "scanning [_algo_said [dict get $req algorithm] $said [dict get $req metric]] at $at: [_input_said $req]"
-    _scan_note $quiet $req {mol atoms fitatoms algorithm metric params}
+    _scan_note $quiet $req {mol atoms fitatoms fitframe algorithm metric params}
     variable last_pct
     unset -nocomplain last_pct
     if {[catch {::VMDance::Job::run elbow $req [expr {$quiet ? "" : "::VMDance::_console_progress"}]} s]} { error "$what: $s" }
@@ -891,7 +895,7 @@ proc ::VMDance::_api_sweep {args} {
     dict set req configs $configs
     if {[catch {::VMDance::Job::check_sweep $req} req]} { error "$what: $req" }
     _say $quiet "sweeping [llength [dict get $req configs]] configurations: [_input_said $req]"
-    _scan_note $quiet $req {mol atoms fitatoms}
+    _scan_note $quiet $req {mol atoms fitatoms fitframe}
     variable last_pct
     unset -nocomplain last_pct
     if {[catch {::VMDance::Job::run sweep $req [expr {$quiet ? "" : "::VMDance::_console_progress"}]} s]} { error "$what: $s" }
@@ -1377,7 +1381,7 @@ proc ::VMDance::_api_renumber {args} {
     _api_info
 }
 
-# radii ?-mol m? ?-sel text? ?-fit text? ?-first f? ?-last l? ?-step s?: a
+# radii ?-mol m? ?-sel text? ?-fit text ?-fitframe f? ?-fitmove 0|1?? ?-first f? ?-last l? ?-step s?: a
 # range to scan eQual's radius over, from the distances between a sample
 # of the frames (150 or so, evenly taken): {sample pairs percentiles from
 # to by} (Job::_do_radii).
@@ -1385,7 +1389,7 @@ proc ::VMDance::_api_radii {args} {
     set what "vmdance radii"
     lassign [_request $what $args {}] req
     if {[dict size [dict get $req params]] || [dict exists $req algorithm] || [dict exists $req k] || [dict exists $req metric]} {
-        error "$what: its options are -mol, -sel, -fit, -first, -last and -step"
+        error "$what: its options are -mol, -sel, -fit, -fitframe, -fitmove, -first, -last and -step"
     }
     _check_idle $what
     if {[catch {radii_request [dict remove $req params]} q]} { error "$what: $q" }

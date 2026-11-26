@@ -36,18 +36,117 @@ after a job.
 The toolbar
 -----------
 
-In order:
+Each button's icon is a small picture of what it does. Rest the pointer on
+a button: it says what it does, and its keys (Ctrl here; ⌘ on macOS). In
+order, left to right:
 
-- the left panel;
-- open and save a session;
-- export results and create figures;
-- **Cluster**, **Elbow scan** and **Cancel**, with the ring of the running
-  job's progress;
-- the thirteen plots;
-- colour by cluster, every representative, go to the selected cluster's
-  representative, render the 3D view;
-- Settings and the quick guide;
-- the plot options.
+.. list-table::
+   :header-rows: 1
+   :widths: 10 14 76
+   :class: icon-table
+
+   * -
+     - Button
+     - What it does
+   * - |icon-panel-left|
+     - Panel
+     - A book with its left page open: shows or hides the left panel, for
+       a wider plot (Ctrl+Shift+L).
+   * - |icon-open|
+     - Open
+     - A folder: opens a saved session, every run, scan and group as you
+       left them (Ctrl+O).
+   * - |icon-save|
+     - Save
+     - The floppy disk: keeps the session in a ``.vmdance`` file (Ctrl+S).
+   * - |icon-export|
+     - Export
+     - A table leaving the window: writes the tables (CSV), the labels,
+       the representatives' structures and each cluster's frames to a
+       folder (Ctrl+E; :doc:`files`).
+   * - |icon-figure|
+     - Figures
+     - A chart on a page: writes the plots as PDF, PNG or EPS, sized for a
+       paper's column or a slide (Ctrl+P; :doc:`files`).
+   * - |icon-cluster|
+     - Cluster
+     - Play: clusters the frames as Setup says, in the background
+       (Ctrl+R). The ring beside Cancel fills as the job runs.
+   * - |icon-elbow|
+     - Elbow
+     - A curve with its knee ringed: the same clustering at every k of
+       Scans ▸ Elbow (eQual: at every radius), to see where more clusters
+       stop paying (:doc:`scans`).
+   * - |icon-cancel|
+     - Cancel
+     - Stop: ends the running job, and keeps what was there before. Grey
+       while nothing runs.
+   * - |icon-tab-populations|
+     - The plots
+     - Thirteen buttons, each a miniature of its plot:
+       |icon-tab-populations| |icon-tab-makeup| |icon-tab-timeline|
+       |icon-tab-transitions| |icon-tab-residence| |icon-tab-compactness|
+       |icon-tab-distances| |icon-tab-tree| |icon-tab-silhouette|
+       |icon-tab-map| |icon-tab-profiles| |icon-tab-elbow| |icon-tab-sweep|.
+       They open it (Ctrl+1 to Ctrl+9 for the first nine). :doc:`plots`
+       says which is which.
+   * - |icon-colour|
+     - Colour
+     - A chain painted in its cluster's colour: colours the molecule, in
+       VMD's 3D window, by the cluster of the frame VMD shows. It follows
+       the trajectory as it plays (:doc:`threed`).
+   * - |icon-reps|
+     - Reps
+     - Several chains, each in its colour: draws every cluster's
+       representative at once.
+   * - |icon-goto|
+     - Go
+     - A target: VMD goes to the selected cluster's representative frame.
+   * - |icon-render|
+     - Render
+     - A camera: saves VMD's 3D view as a PNG.
+   * - |icon-settings|
+     - Settings
+     - The gear: the backend (CPP-MDANCE's program or its library), the
+       text's and the window's size, the theme, the icons' size.
+   * - |icon-help|
+     - Help
+     - The quick guide, in a window of its own.
+   * - |icon-panel-right|
+     - Options
+     - The plot's dials, at the far right: shows or hides the panel of
+       the plot options (Ctrl+Shift+O).
+
+The five tabs of the left panel have icons too:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 10 14 76
+   :class: icon-table
+
+   * -
+     - Tab
+     - What it holds
+   * - |icon-pane-setup|
+     - Setup
+     - What to cluster (the molecule, the atoms, the frames, the fit) and
+       how (the algorithm and its parameters).
+   * - |icon-pane-results|
+     - Results
+     - The runs, the table of the current one's clusters, and the groups,
+       the map and the profiles.
+   * - |icon-pane-scans|
+     - Scans
+     - The elbow scan (the scores at every k, and the stability of NANI's
+       seedings) and the sweep of algorithms and seedings.
+   * - |icon-pane-tools|
+     - Tools
+     - PRIME's predicted native frame, the clusters' similarity, and
+       frames picked without clustering.
+   * - |icon-pane-3d|
+     - 3D
+     - How VMD draws the clusters: colours, the representatives, an
+       overlay of the selected clusters.
 
 Setup
 -----
@@ -63,9 +162,15 @@ Setup
   the number of atoms they match. Some selections are refused (below).
 - the frames: all, or a range (-1 being the last), and every n-th, with
   the number of frames they give.
-- **Fit to the first frame on** a selection. It superposes every frame on
-  the first clustered one before clustering. The fit is made on the
-  values: VMD's coordinates are not moved. It is off unless ticked.
+- **Fit on** a selection. It superposes every frame on a reference frame
+  before clustering. The fit is off unless ticked. Below it:
+
+  - **to frame**: the reference, any frame of the molecule (-1 the last).
+    Empty, the default, is the first clustered frame.
+  - **Move VMD's coordinates**: off, the fit is made on the values and
+    VMD's coordinates are not moved. On, Cluster first moves every frame
+    of the molecule, all of its atoms, onto the reference in VMD, as an
+    alignment would. Reload the trajectory to undo it.
 
 A selection whose atoms can change with the frame is refused: ``within``,
 ``nearest``, ``x``, ``user`` …, or a macro of them. A clustering compares
@@ -76,7 +181,9 @@ freeing about 100 000.
 
 A note under the Fit box says:
 
-- with a fit, the atoms it is made on (*Fitted on 50 atoms*);
+- with a fit, the atoms it is made on, the reference frame, and whether
+  Cluster moves VMD's coordinates (*Fitted on 50 atoms, onto frame 120
+  (on values: VMD's coordinates are not moved).*);
 - without one, how far a sample of the frames (the first and 20 others) is
   from the first, as they are and once fitted on it: *Not fitted. From the
   first frame: 3.71 Å as they are, 3.3 Å fitted: the frames look
@@ -102,8 +209,9 @@ the backend was built without it. A note under it:
 
 - names the algorithms the backend was built without. The backend is asked
   again as the chooser opens, for a program rebuilt meanwhile.
-- says when the library clusters. VMD then waits for each clustering, and
-  the line at the bottom says so through it.
+- says when the library clusters. Its v2 clusters in the background, and
+  Cancel stops it. With a library before v2, VMD waits for each
+  clustering, and the line at the bottom says so through it.
 - says that *Automatic* took the library, finding no program.
 
 **Parameters**: the chosen algorithm's (:doc:`parameters`). The other

@@ -16,11 +16,13 @@ proc env_or {name default} {
 }
 # Text for LaTeX: its special characters escaped, and the few non-ASCII ones
 # the plugin writes turned into LaTeX.
+# (written as \u escapes: the file stays ASCII, which VMD reads alike
+# whatever the system's encoding, Windows' cp1252 too)
 proc tex {s} {
     string map [list \\ {\textbackslash{}} & {\&} % {\%} \$ {\$} # {\#} _ {\_} \
         \{ {\{} \} {\}} ~ {\textasciitilde{}} ^ {\textasciicircum{}} \
-        – -- — --- Å {\AA{}} ² {\textsuperscript{2}} \
-        ≥ {$\geq$} ≤ {$\leq$} × {$\times$} → {$\rightarrow$}] $s
+        \u2013 -- \u2014 --- \u00c5 {\AA{}} \u00b2 {\textsuperscript{2}} \
+        \u2265 {$\geq$} \u2264 {$\leq$} \u00d7 {$\times$} \u2192 {$\rightarrow$}] $s
 }
 # "a, b and c"
 proc and_list {items} {
@@ -78,6 +80,9 @@ if {[catch {
     if {$cpu eq ""} {
         catch { regexp -line {^model name\s*:\s*(.+)$} [exec cat /proc/cpuinfo] -> cpu }
     }
+    if {$cpu eq "" && $::tcl_platform(platform) eq "windows"} {
+        catch { set cpu [exec powershell -NoProfile -Command "(Get-CimInstance Win32_Processor).Name"] }
+    }
     keep qsMachine [tex [string trim $cpu]]
     keep qsVersion [package present vmdance]
 
@@ -88,32 +93,8 @@ if {[catch {
     keep qsAtoms [$s num]
     # (the frame the script fitted on: its fitframe)
     keep qsFitFrame $fitframe
-    # how far VMD's measure fit (the script's) is from the least RMSD to
-    # that frame: each frame as the script moved it, against the plugin's
-    # exact fit (Horn's quaternion) of the same coordinates
-    set r [atomselect $m $sel frame $fitframe]
-    set Y [$r get {x y z}]
-    set R [::VMDance::Coords::fit_ref $Y]
-    set worst 0.0; set sum 0.0
-    for {set f 0} {$f < $nf} {incr f} {
-        $s frame $f
-        set X [$s get {x y z}]
-        set M [::VMDance::Coords::fit_matrix $X $R]
-        set d2 0.0; set e2 0.0
-        foreach x $X y $Y {
-            set z [coordtrans $M $x]
-            set d2 [expr {$d2 + [veclength2 [vecsub $x $y]]}]
-            set e2 [expr {$e2 + [veclength2 [vecsub $z $y]]}]
-        }
-        set n [llength $X]
-        set gap [expr {sqrt($d2 / $n) - sqrt($e2 / $n)}]
-        set sum [expr {$sum + sqrt($d2 / $n)}]
-        if {$gap > $worst} { set worst $gap }
-    }
-    $r delete; $s delete
-    # (in thousandths of an angstrom, at least one: "within 0.001")
-    keep qsFitWorst [format %.3f [expr {max($worst, 0.001)}]]
-    keep qsFitMean [frac [expr {$sum / $nf}] 2]
+    $s delete
+    # (the frames as the script's fit left them: moved onto that frame)
     set al [vmdance alignment -mol $m -sel $sel]
     keep qsAsIs [frac [dict get $al as_is] 2]
     keep qsFitted [frac [dict get $al fitted] 2]
@@ -174,6 +155,9 @@ if {[catch {
     keep qsKStability $stab($K)
     keep qsKCh $ch($K)
     keep qsKDb $db($K)
+    # (and on each side of it: whether it is a dip of the score's)
+    keep qsKDbBefore $db([expr {$K - 1}])
+    keep qsKDbAfter $db([expr {$K + 1}])
     # how long the trajectory stays in a cluster: the clusters' mean stays
     set stays [lmap row [vmdance residence] {lindex $row 2}]
     keep qsStayMin [frac [::tcl::mathfunc::min {*}$stays] 1]

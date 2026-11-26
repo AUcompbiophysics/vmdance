@@ -4,6 +4,37 @@ Changes
 1.0 alpha 1, as it grew
 -----------------------
 
+**26 November 2026: CPP-MDANCE's library v2, a fit onto any frame,
+k-means' tolerance, and one example for the guide and these pages.**
+
+- A library of CPP-MDANCE's second interface (its library v2, CPP-MDANCE's
+  pull request #62) clusters on a thread of its own: VMD stays usable, the
+  job says how far it is, and Cancel stops it. Its coordinates are one
+  dataset of the library's, 8 bytes a number. A library before v2 runs as
+  it did (:doc:`install`).
+- With the library v2, an elbow scan's values of k are made at once, on
+  its threads. Cancelled, it keeps the values made: the low ones, a long
+  scan being made 16 values at a time from the smallest (:doc:`scans`).
+- The library v2 is faster than the program: 1.5 to 1.8 times for a
+  clustering of the tau peptide's backbone, 15 times for its elbow scan,
+  on a 4-core PC. The quick-start guide's benchmark was run again with
+  it, and its section says so.
+- *Fit on* takes the frame the frames are superposed on (*to frame*,
+  ``-fitframe``), and can move VMD's coordinates there (*Move VMD's
+  coordinates*, ``-fitmove 1``), every frame and atom, where it fitted
+  their values only.
+- KMeans NANI has a tolerance (*Tolerance*, ``-tol``). 0, the default,
+  runs until no frame changes cluster. ``1e-4`` stops where MDANCE's
+  Python does, and gives its labels: on the tau peptide, in every one of
+  24 runs.
+- The quick-start guide and these pages use one example and setup: the
+  tau peptide, fitted on its backbone of residues 3 to 12 onto frame 999,
+  KMeans NANI seeded by CompSim, k 6. :doc:`tutorial` is written for it
+  (it took k 3), and every picture was taken again.
+- The window's icons, drawn large, with what each button does:
+  :doc:`window` and :doc:`plots`, and the guide, which shows the toolbar
+  button by button and its script cell by cell.
+
 **24 November 2026: the new logo, MDANCE's logos, documentation and
 look, and the window's numbers.**
 

@@ -10,6 +10,71 @@ options). Noise is grey.
 Hover a plot: the line under it says what the pointer is on. A plot's tab
 says its name and what it shows when the pointer rests on it.
 
+Each plot has its button in the toolbar and its tab above the plots, with
+its icon, a miniature of the plot:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 10 16 60 14
+   :class: icon-table
+
+   * -
+     - Plot
+     - It answers
+     - Keys
+   * - |icon-tab-populations|
+     - `Populations`_
+     - How many frames does each cluster hold?
+     - Ctrl+1
+   * - |icon-tab-makeup|
+     - `Make-up`_
+     - Where did each cluster's frames come from (a group: a half, a replica)?
+     - Ctrl+2
+   * - |icon-tab-timeline|
+     - `Timeline`_
+     - Which cluster is the trajectory in, frame by frame?
+     - Ctrl+3
+   * - |icon-tab-transitions|
+     - `Transitions`_
+     - From each cluster, where does the trajectory go next?
+     - Ctrl+4
+   * - |icon-tab-residence|
+     - `Residence`_
+     - How long does it stay in a cluster once there?
+     - Ctrl+5
+   * - |icon-tab-compactness|
+     - `Compactness`_
+     - How tight is each cluster?
+     - Ctrl+6
+   * - |icon-tab-distances|
+     - `Distances`_
+     - How far apart are the clusters?
+     - Ctrl+7
+   * - |icon-tab-tree|
+     - `Tree`_
+     - How do the clusters join?
+     - Ctrl+8
+   * - |icon-tab-silhouette|
+     - `Silhouette`_
+     - Does each frame sit well in its cluster?
+     - Ctrl+9
+   * - |icon-tab-map|
+     - `Map`_
+     - Where are the frames on their first two principal components?
+     - 
+   * - |icon-tab-profiles|
+     - `Profiles`_
+     - Which residues move, cluster by cluster?
+     - 
+   * - |icon-tab-elbow|
+     - `Elbow`_
+     - How many clusters?
+     - 
+   * - |icon-tab-sweep|
+     - `Sweep`_
+     - Which algorithm, seeding and k score best?
+     - 
+
 The **Plot options** panel (the toolbar's last button) holds every setting
 of the current plot. It also holds those shared by all (*All plots*): grid
 lines, legends, the line width, the distances' unit, the time per frame
@@ -38,6 +103,8 @@ keeps it.
 Populations
 -----------
 
+|icon-tab-populations| *How many frames does each cluster hold?*
+
 .. image:: _static/figures/plot_populations.png
    :width: 100%
 
@@ -49,6 +116,8 @@ Double-click: go to its representative.
 Make-up
 -------
 
+|icon-tab-makeup| *Where did each cluster's frames come from (a group: a half, a replica)?*
+
 .. image:: _static/figures/plot_makeup.png
    :width: 100%
 
@@ -58,7 +127,7 @@ frames by cluster. Noise and frames of no group are left out.
 
 The bars show counts, or shares (of the cluster, or of the group). The
 shares' axis ends at 100. With shares, each bar's frames are written above
-it too (*n = 1508*), since a bar of 16 frames is then as tall as one of
+it too (*n = 1844*), since a bar of 16 frames is then as tall as one of
 3000.
 
 The readout gives the slice under the pointer first, then the bar's
@@ -67,6 +136,8 @@ representative.
 
 Timeline
 --------
+
+|icon-tab-timeline| *Which cluster is the trajectory in, frame by frame?*
 
 .. image:: _static/figures/plot_timeline.png
    :width: 100%
@@ -112,6 +183,8 @@ is first seen at.
 Transitions
 -----------
 
+|icon-tab-transitions| *From each cluster, where does the trajectory go next?*
+
 .. image:: _static/figures/plot_transitions.png
    :width: 100%
 
@@ -130,6 +203,8 @@ when it is ticked.
 Residence
 ---------
 
+|icon-tab-residence| *How long does it stay in a cluster once there?*
+
 .. image:: _static/figures/plot_residence.png
    :width: 100%
 
@@ -146,6 +221,8 @@ Click a bar: select the cluster. Double-click: go to its representative.
 
 Compactness
 -----------
+
+|icon-tab-compactness| *How tight is each cluster?*
 
 .. image:: _static/figures/plot_compactness.png
    :width: 100%
@@ -173,6 +250,8 @@ in Å.
 Distances
 ---------
 
+|icon-tab-distances| *How far apart are the clusters?*
+
 .. image:: _static/figures/plot_distances.png
    :width: 100%
 
@@ -189,6 +268,8 @@ would take gigabytes.
 
 Tree
 ----
+
+|icon-tab-tree| *How do the clusters join?*
 
 .. image:: _static/figures/plot_tree.png
    :width: 100%
@@ -243,6 +324,8 @@ and the tree export a column of them.
 Silhouette
 ----------
 
+|icon-tab-silhouette| *Does each frame sit well in its cluster?*
+
 .. image:: _static/figures/plot_silhouette.png
    :width: 100%
 
@@ -280,6 +363,8 @@ first.
 Map
 ---
 
+|icon-tab-map| *Where are the frames on their first two principal components?*
+
 .. image:: _static/figures/plot_map.png
    :width: 100%
 
@@ -305,6 +390,8 @@ select its cluster.
 Profiles
 --------
 
+|icon-tab-profiles| *Which residues move, cluster by cluster?*
+
 .. image:: _static/figures/plot_profiles.png
    :width: 100%
 
@@ -327,6 +414,8 @@ pointer, and a click on a cluster's curve selects the cluster.
 
 Elbow
 -----
+
+|icon-tab-elbow| *How many clusters?*
 
 .. image:: _static/figures/plot_elbow.png
    :width: 100%
@@ -365,6 +454,8 @@ Double-click: make it the clustering.
 
 Sweep
 -----
+
+|icon-tab-sweep| *Which algorithm, seeding and k score best?*
 
 .. image:: _static/figures/plot_sweep.png
    :width: 100%

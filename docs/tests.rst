@@ -345,13 +345,41 @@ so that no core is dumped.
        - a configuration of its sweep (its parameters not recorded)
        - fixtures written by the MDANCE plugin itself
    * - ``test_hardening2_h3``
-     - the library mode (the real library and program; skipped without
-       them):
+     - the library mode with a library of CPP-MDANCE's first interface (the
+       real library and program; skipped without them, or for a library
+       v2, which ``test_library_v2`` tests):
 
        - a job's calls given one list, read once (an elbow, HELM's, a
          sweep), and its text made once
        - the step said before each call
        - a Cancel pressed during a call, taken when it returns
+   * - ``test_library_v2``
+     - the library mode with CPP-MDANCE's library v2 (API 2; the real
+       library and program; skipped without them, or for a library of the
+       first interface):
+
+       - a job's calls given one dataset, made once (an elbow, HELM's, a
+         sweep) and freed when the job ends
+       - each call run as a job of the library's: the step said before it,
+         Tcl's event loop going on during it
+       - the program's labels (k-means, HELM, DIVINE, eQual), and PRIME's,
+         the similarity's and a pick's answers, on the same coordinates
+       - a Cancel during a call, a scan's too, and a call that fails
+       - a long elbow scanned in chunks of its smallest values first, with
+         one scan's labels; cancelled, its smallest values kept
+       - the memory a call needs (where the system says what is free)
+   * - ``test_fitframe``
+     - the fit onto any frame (``-fitframe``), on the values or moving
+       VMD's coordinates (``-fitmove``):
+
+       - the options checked: a fit's only, a frame of the molecule, -1
+         the last, the first clustered frame the default
+       - the rows superposed on the reference: its own row its coordinates
+       - ``-fitmove 0`` leaves VMD's coordinates; ``-fitmove 1`` moves every
+         frame and atom onto the reference, rigidly, and clusters as
+         ``-fitmove 0``; aligning again moves nothing and keeps the rows
+       - the run's name, ``info`` and the files' header say them; a corrupt
+         one in a session is refused
    * - ``test_hardening2_h4``
      - the exports and the stated requirements:
 

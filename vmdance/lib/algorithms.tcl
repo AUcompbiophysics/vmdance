@@ -51,6 +51,7 @@ namespace eval ::VMDance::Algo {
             params {
                 {kinit choice StratAll {StratAll StratReduced CompSim DivSelect KmeansPP Random VanillaKmeansPP} "Seeding" "How the k initial centres are chosen: NANI's stratified and complementary-similarity schemes, diversity selection, or the usual k-means++ and random"}
                 {percentage int 10 {1 100} "Seeds from %" "The share of the frames the seeds are drawn from (the extended-similarity seedings: StratAll, StratReduced, CompSim, DivSelect; k-means++ and random do not use it): k must be at most this share of the frames"}
+                {tol real 0 {0 ""} "Tolerance" "When k-means stops: 0, once no frame changes cluster; 1e-4, where Python MDANCE stops (scikit-learn's KMeans default: once the centres barely move), for its labels exactly. Needs CPP-MDANCE with -tol for any other value than 0"}
             }
         }
         divine {
@@ -513,6 +514,10 @@ proc ::VMDance::Algo::_passed {a params} {
         if {$name in $trim && ![dict get $params trim-start]} continue
         # (only the trim that was chosen: -trim-k or -trim-val)
         if {$name in {trim-k trim-val} && [dict get $params $name] == 0} continue
+        # (k-means' tolerance only when one is asked: 0 is every
+        # CPP-MDANCE's own stop, and one before -tol refuses the option)
+        # (a request made before the tolerance existed has none: 0)
+        if {$a eq "kmeans" && $name eq "tol" && [::VMDance::_get $params tol 0] == 0} continue
         dict set out $name [dict get $params $name]
     }
     return $out

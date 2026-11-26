@@ -7,10 +7,15 @@
 #            VMD stay usable; Cancel stops it): coordinates go in as a CSV
 #            file, results come back as JSON
 #   library  its Tcl extension (mdance_tcl), loaded into VMD: coordinates
-#            are passed in memory, as one list (about 180 bytes a number
-#            at a call's peak: Job::_library_fits), results come back as a
-#            dict; a call blocks VMD until it returns and cannot be
-#            cancelled (the CSV file is written all the same)
+#            are passed in memory, results come back as a dict (the CSV
+#            file is written all the same). Its interface (lib_api):
+#            2 (CPP-MDANCE's library v2): the job's coordinates are held by
+#              the library as one dataset, 8 bytes a number; each call runs
+#              on a thread of the library's (VMD stays usable; Cancel stops
+#              it; Job::_call_v2)
+#            1 (before): the coordinates go in as one list (about 180
+#              bytes a number at a call's peak: Job::_library_fits); a call
+#              blocks VMD until it returns and cannot be cancelled
 # "auto" uses the program when there is one, else the library. Settings'
 # choice is kept in the preferences, which a script reads too (from_prefs).
 #
@@ -25,6 +30,7 @@ namespace eval ::VMDance::Backend {
     variable cli ""             ;# the program chosen in Settings ("" = search)
     variable lib ""             ;# the library chosen in Settings ("" = search)
     variable loaded ""          ;# the library loaded into this VMD
+    variable api 0              ;# its interface: 1 or 2 (0: none loaded; lib_api)
     variable prefs_read 0       ;# the preferences' backend was read (from_prefs: once, under configure's options)
     variable caps               ;# program or library -> {its stamp, its algorithms}
     variable notes              ;# program -> what its probe could not tell
@@ -124,9 +130,21 @@ proc ::VMDance::Backend::load_lib {{path ""}} {
     set path [file normalize $path]
     if {[catch {uplevel #0 [list load $path Mdance]} err]} { error "the MDANCE library \"$path\" could not be loaded: $err" }
     if {[info commands ::mdance::kmeans] eq ""} { error "\"$path\" is not the MDANCE library (no ::mdance::kmeans)" }
+    variable api
+    set api [_api_of]
     set loaded $path
     return $path
 }
+# The interface of the library loaded: 2 when it says so (::mdance::info's
+# api, a whole number) and has datasets and jobs, else 1.
+proc ::VMDance::Backend::_api_of {} {
+    if {[info commands ::mdance::info] eq "" || [catch {::mdance::info} i] || [catch {dict get $i api} a]} { return 1 }
+    if {![regexp {^[0-9]{1,3}$} $a] || $a < 2} { return 1 }
+    if {[info commands ::mdance::data] eq "" || [info commands ::mdance::job] eq ""} { return 1 }
+    return 2
+}
+# The library's interface (0 when none is loaded).
+proc ::VMDance::Backend::lib_api {} { variable api; return $api }
 
 # Which backend a job uses: {cli path} or {library path}; an error says
 # what is missing.
@@ -296,9 +314,15 @@ proc ::VMDance::Backend::algorithms {{again 0}} {
     } else {
         set out [lmap a $all_algorithms {expr {[info commands ::mdance::$a] ne "" ? $a : [continue]}}]
         # (the library registers DIVINE's command whether or not it was
-        # built with it: ask it)
-        if {"divine" in $out && [catch {::mdance::divine {0 0 0 1 1 1} 2 1 1} e] && [string match "*not available*" $e]} {
-            set out [lsearch -all -inline -not -exact $out divine]
+        # built with it: API 2 says so in ::mdance::info, API 1 is asked)
+        if {"divine" in $out} {
+            if {[lib_api] >= 2} {
+                if {[catch {dict get [::mdance::info] divine} d] || $d ne "1"} {
+                    set out [lsearch -all -inline -not -exact $out divine]
+                }
+            } elseif {[catch {::mdance::divine {0 0 0 1 1 1} 2 1 1} e] && [string match "*not available*" $e]} {
+                set out [lsearch -all -inline -not -exact $out divine]
+            }
         }
     }
     set caps($path) [list $stamp $out]

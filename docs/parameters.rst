@@ -40,6 +40,10 @@ K-means with N-ary natural initiation: k clusters, seeded by extended similarity
      - ``10``
      - whole number, 1 to 100
      - **Seeds from %**: The share of the frames the seeds are drawn from (the extended-similarity seedings: StratAll, StratReduced, CompSim, DivSelect; k-means++ and random do not use it): k must be at most this share of the frames
+   * - ``-tol``
+     - ``0``
+     - number, at least 0
+     - **Tolerance**: When k-means stops: 0, once no frame changes cluster; 1e-4, where Python MDANCE stops (scikit-learn's KMeans default: once the centres barely move), for its labels exactly. Needs CPP-MDANCE with -tol for any other value than 0
 
 DIVINE
 ------

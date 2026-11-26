@@ -1,8 +1,8 @@
 window 0 0 1350 950
-toolbar 0 0 1350 40
-panes 6 42 407 887
-plots 427 42 917 857
-plot 438 104 895 784
-options 438 75 895 29
-readout 427 899 917 30
-status 0 931 1350 19
+toolbar 0 0 1350 38
+panes 6 40 480 884
+plots 500 40 844 844
+plot 504 108 836 772
+options 504 76 836 32
+readout 500 884 844 40
+status 0 926 1350 24

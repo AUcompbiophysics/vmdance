@@ -47,8 +47,13 @@ namespace eval ::VMDance::Job {
     variable lib_most 0                ;# the most coordinates given to the library in this VMD
     variable lib_rows {}               ;# the job's coordinates as the library's list (_call)
     variable lib_of ""                 ;# the extraction they are of
+    variable lib_data ""               ;# API 2: the job's coordinates as the library's dataset (_call_v2)
+    variable scanned {}                ;# API 2: an elbow scan's answers made at once ({k metric params} -> {ok answer}: _scan_v2)
+    variable scan_whole 24             ;# API 2: an elbow of more values is scanned in chunks of the smallest first (_do_elbow)
+    variable scan_chunk 16             ;#   of this many values
+    variable lib2_peak 40              ;# API 2: bytes a coordinate at a call's peak (the dataset and the algorithms' copies)
     # what a clustering request holds, and its defaults
-    variable input_defaults {mol top sel "name CA" first 0 last -1 step 1 fit ""}
+    variable input_defaults {mol top sel "name CA" first 0 last -1 step 1 fit "" fitframe "" fitmove 0}
 }
 
 proc ::VMDance::Job::busy {} { variable running; return $running }
@@ -77,6 +82,10 @@ proc ::VMDance::Job::_tell {what kind} {
 
 # The input of a request (what is clustered), checked: mol (an id), sel,
 # fit, first, last, step, and frames (the VMD frames) and natoms added.
+# With a fit: fitframe, the frame it superposes on (any of the molecule's,
+# -1 its last; "" — and the first analysed frame itself — the first
+# analysed), and fitmove, 1 to move VMD's coordinates onto it before they
+# are read (Job::_coords), 0 to fit their values only.
 proc ::VMDance::Job::check_input {req} {
     variable input_defaults
     set req [dict merge $input_defaults $req]
@@ -90,6 +99,23 @@ proc ::VMDance::Job::check_input {req} {
     if {$nf < 2} { error "-first, -last, -step: a clustering needs at least 2 frames (these give $nf)" }
     if {![::VMDance::Mol::exists $m]} { error "molecule $m was deleted" }
     lassign [::VMDance::Coords::check_selection $m [dict get $req sel] [dict get $req fit]] natoms idx fidx
+    set ff [string trim [dict get $req fitframe]]
+    set mv [string trim [dict get $req fitmove]]
+    if {![string is boolean -strict $mv]} { error "-fitmove must be 0 or 1 (got \"$mv\")" }
+    set mv [expr {$mv ? 1 : 0}]
+    if {[dict get $req fit] eq ""} {
+        if {$ff ne ""} { error "-fitframe: the frame a fit superposes on: give the fit's atoms too (-fit selection)" }
+        if {$mv} { error "-fitmove: moving the coordinates is a fit's: give the fit's atoms too (-fit selection)" }
+    } elseif {$ff ne ""} {
+        if {![regexp {^-?(0|[1-9][0-9]*)$} $ff]} { error "-fitframe must be a whole number (got \"$ff\")" }
+        set nfm [molinfo $m get numframes]
+        if {$ff == -1} { set ff [expr {$nfm - 1}] }
+        if {$ff < 0 || $ff >= $nfm} { error "-fitframe must be a frame of molecule $m: 0 to [expr {$nfm - 1}], or -1 for the last (got $ff)" }
+        set ff [expr {$ff}]
+        if {$ff == [lindex [dict get $req frames] 0]} { set ff "" }
+    }
+    dict set req fitframe $ff
+    dict set req fitmove $mv
     dict set req natoms $natoms
     # (the atoms the texts select now: "beta > 0" may be other atoms later)
     dict set req atoms [::VMDance::Mol::index_text $idx]
@@ -354,7 +380,7 @@ proc ::VMDance::Job::_body {kind req done} {
             _library_fits [dict get $in natoms] [llength [dict get $in frames]]
             # (and what would crash it: an elbow's smallest k, its others and
             # a sweep's configurations one by one, as they are run)
-            if {$kind in {cluster elbow}} {
+            if {$kind in {cluster elbow} && [::VMDance::Backend::lib_api] < 2} {
                 _library_divine [dict get $req algorithm] [lindex [::VMDance::_get $req ks [dict get $req k]] 0] [dict get $req params]
             }
         }
@@ -366,7 +392,8 @@ proc ::VMDance::Job::_body {kind req done} {
         set running 0
         set backend ""
         variable lib_rows {}
-        variable lib_of ""
+        variable scanned {}
+        _free_lib_data
         # (the coordinates' files dropped meanwhile: the job no longer reads them)
         ::VMDance::Coords::reap
     }
@@ -383,12 +410,166 @@ proc ::VMDance::Job::_progress {frac msg} {
 # The coordinates of a request, read in the background (progress within
 # [lo, hi] of the job).
 proc ::VMDance::Job::_coords {req {lo 0.0} {hi 0.4}} {
+    # (fitmove: VMD's coordinates moved onto the reference first, every
+    # frame and atom; frames already there are not moved, so the kept rows
+    # of a clustering stay valid for the scans after it)
+    if {[::VMDance::_get $req fitmove 0] && [::VMDance::_get $req fitatoms ""] ne ""} {
+        set ref [::VMDance::_get $req fitframe ""]
+        if {$ref eq ""} { set ref [lindex [dict get $req frames] 0] }
+        set mid [expr {$lo + ($hi - $lo) / 2.0}]
+        _progress $lo "moving the frames onto frame $ref"
+        ::VMDance::Coords::align [dict get $req mol] [dict get $req fitatoms] $ref [list apply {{lo hi f m} {
+            ::VMDance::Job::_progress [expr {$lo + ($hi - $lo) * $f}] $m
+        }} $lo $mid] ::VMDance::Job::cancelled
+        set lo $mid
+    }
     set c [::VMDance::Coords::cached $req ::VMDance::Job::cancelled]
     if {[dict size $c]} { return $c }
     _progress $lo "reading [llength [dict get $req frames]] frames"
     ::VMDance::Coords::extract $req [list apply {{lo hi f m} {
         ::VMDance::Job::_progress [expr {$lo + ($hi - $lo) * $f}] $m
     }} $lo $hi] ::VMDance::Job::cancelled
+}
+
+# A call of a library of CPP-MDANCE's second interface (API 2; Job::_call
+# hands it over). The job's coordinates are held by the library as one
+# dataset (lib_data), filled once from the rows the extraction read (as the
+# program's CSV holds them: the same numbers, so the library and the
+# program cluster the same data) and freed at the job's end; at 8 bytes a
+# number, no text is made of them. The call runs as a job of the library's,
+# on a thread of its own: the job's coroutine yields while it runs (VMD
+# keeps drawing and answering), says how far it is, and Cancel stops it
+# within a fraction of a second.
+proc ::VMDance::Job::_call_v2 {c what msg path} {
+    variable cancelled; variable inner
+    set op [lindex $what 0]
+    set lib_data [_lib_dataset $c $msg]
+    switch -- $op {
+        cluster {
+            lassign $what - a k metric params initial
+            set opts [::VMDance::Algo::lib_args $a $params $metric]
+            switch -- $a {
+                equal { set argv [list equal $lib_data {*}$opts] }
+                helm  { set argv [list helm $lib_data $k $initial {*}$opts] }
+                default { set argv [list $a $lib_data $k {*}$opts] }
+            }
+        }
+        analysis {
+            lassign $what - metric labels
+            set argv [list analysis $lib_data -metric $metric -labels $labels]
+        }
+        prime {
+            lassign $what - metric trim weighted labels
+            set argv [list prime $lib_data -metric $metric -labels $labels -trim-frac $trim]
+            if {$weighted} { lappend argv -weighted }
+        }
+        select {
+            lassign $what - metric method param nbins
+            set argv [list select $lib_data -metric $metric -method $method -param $param -nbins $nbins]
+        }
+    }
+    lassign $inner lo hi
+    set step "$msg[expr {$op eq "cluster" && [lindex $what 2] ne "" ? ", k = [lindex $what 2]" : ""}], in the library"
+    _progress $lo $step
+    if {$cancelled} { error "cancelled" }
+    set j [::mdance::job start {*}$argv]
+    try {
+        while 1 {
+            after 100 [info coroutine]
+            yield
+            set st [::mdance::job status $j]
+            if {[dict get $st state] ne "running"} break
+            if {$cancelled} { ::mdance::job cancel $j; continue }
+            set p [dict get $st progress]
+            if {$p > 0} { _progress [expr {$lo + ($hi - $lo) * $p}] "$step: [expr {round(100 * $p)}]%" }
+        }
+        if {$cancelled} { error "cancelled" }
+        # (the call's error, if it failed: the library's message)
+        set r [::mdance::job result $j]
+        set j ""
+    } finally {
+        if {$j ne ""} { catch {::mdance::job forget $j} }
+    }
+    if {$op eq "select"} { set r [dict create indices $r] }
+    if {[catch {dict size $r}]} { error "the library's answer is not a dictionary" }
+    return [dict merge $r [dict create _backend [list library $path]]]
+}
+# The job's dataset in the library for the coordinates c: made (and filled)
+# once a job, kept for its calls while c is the extraction they read.
+proc ::VMDance::Job::_lib_dataset {c msg} {
+    variable inner; variable lib_data; variable lib_of
+    _library_takes $c
+    set of [list [dict get $c csv] [dict get $c digest]]
+    if {$lib_of ne $of || $lib_data eq "" || [info commands $lib_data] eq ""} {
+        _free_lib_data
+        _progress [lindex $inner 0] "$msg: reading the frames for the library"
+        set lib_data [::mdance::data create [llength [dict get $c frames]] [dict get $c natoms]]
+        ::VMDance::Coords::each $c i row { $lib_data frame $i $row } ::VMDance::Job::cancelled
+        set lib_of $of
+    }
+    return $lib_data
+}
+
+# An elbow scan's values of k as one call of the library v2's, run at once
+# on its threads (::mdance::scan, as a job of the library's: Cancel stops
+# every value; progress is the share of the values done, within [lo, hi]).
+# ks: the values to run (those not refused before); initial: HELM's starting
+# labels. Fills `scanned`, which Job::_cluster reads instead of calling the
+# library for a value whose request it holds ({k metric params}): {1 answer}
+# or {0 error}. Returns 1 when the scan was cancelled (what finished before
+# is in `scanned`).
+proc ::VMDance::Job::_scan_v2 {c req ks initial lo hi} {
+    variable cancelled; variable inner; variable scanned
+    set a [dict get $req algorithm]
+    set metric [dict get $req metric]
+    set params [dict get $req params]
+    set label [::VMDance::Algo::label $a]
+    set inner [list $lo $hi]
+    set d [_lib_dataset $c $label]
+    set argv [list scan $a $d -ks $ks {*}[::VMDance::Algo::lib_args $a $params $metric]]
+    if {$a eq "helm"} { lappend argv -labels $initial }
+    set step "$label, k = [join $ks {, }], in the library at once"
+    _progress $lo $step
+    if {$cancelled} { return 1 }
+    lassign [::VMDance::Backend::current] - path
+    set j [::mdance::job start {*}$argv]
+    try {
+        while 1 {
+            after 100 [info coroutine]
+            yield
+            set st [::mdance::job status $j]
+            if {[dict get $st state] ne "running"} break
+            if {$cancelled} { ::mdance::job cancel $j; continue }
+            set p [dict get $st progress]
+            if {$p > 0} { _progress [expr {$lo + ($hi - $lo) * $p}] "$step: [expr {round(100 * $p)}]%" }
+        }
+        # (a scan cancelled answers too: the values it made, the others
+        # "cancelled")
+        set rs [::mdance::job result $j]
+        set j ""
+    } finally {
+        if {$j ne ""} { catch {::mdance::job forget $j} }
+    }
+    set stopped $cancelled
+    foreach r $rs {
+        set key [list [dict get $r k] $metric $params]
+        if {[dict exists $r error]} {
+            if {[dict get $r error] eq "cancelled"} { set stopped 1; continue }
+            dict set scanned $key [list 0 [dict get $r error]]
+        } else {
+            dict set scanned $key [list 1 [dict merge [dict remove $r k] [dict create _backend [list library $path]]]]
+        }
+    }
+    return $stopped
+}
+
+# The job's dataset in the library, freed (a job of the library's still
+# reading it frees it when it ends).
+proc ::VMDance::Job::_free_lib_data {} {
+    variable lib_data; variable lib_of
+    if {$lib_data ne "" && [info commands $lib_data] ne ""} { catch {$lib_data delete} }
+    set lib_data ""
+    set lib_of ""
 }
 
 # One call of the backend (in the background when it is the program).
@@ -408,6 +589,9 @@ proc ::VMDance::Job::_call {c what {msg ""}} {
     set natoms [dict get $c natoms]
     set nf [llength [dict get $c frames]]
     set op [lindex $what 0]
+    if {$bk eq "library" && [::VMDance::Backend::lib_api] >= 2} {
+        return [_call_v2 $c $what $msg $path]
+    }
     if {$bk eq "library"} {
         _library_takes $c
         if {$op eq "cluster"} { _library_divine [lindex $what 1] [lindex $what 2] [lindex $what 4] }
@@ -559,6 +743,17 @@ proc ::VMDance::Job::_line {msg line} {
 proc ::VMDance::Job::_library_fits {natoms nf {text ""}} {
     variable lib_text_max; variable lib_peak; variable lib_kept; variable lib_most
     set n [expr {3 * wide($natoms) * $nf}]
+    if {[::VMDance::Backend::lib_api] >= 2} {
+        # (API 2 holds the coordinates as doubles in a dataset, makes no text
+        # of them, and frees them at the job's end: only the memory counts)
+        variable lib2_peak
+        set need [expr {$lib2_peak * $n}]
+        set free [_memory_free]
+        if {$free ne "" && $need > $free} {
+            error "-sel, -first, -last, -step: the library would need about [_size $need] more in VMD for $nf frames × $natoms atoms, and [_size $free] is free; use the program (Settings ▸ Backend, or vmdance backend -mode cli -cli path), or fewer atoms (-sel) or frames (-first, -last, -step)"
+        }
+        return
+    }
     if {$text eq ""} { set text [expr {17 * $n}] }
     set what "$nf frames × $natoms atoms"
     set fix "use the program (Settings ▸ Backend, or vmdance backend -mode cli -cli path[expr {$::VMDance::Backend::mode eq "auto" ? ": Automatic found none" : ""}]), or fewer atoms (-sel) or frames (-first, -last, -step)"
@@ -823,7 +1018,7 @@ proc ::VMDance::Job::_initial {c req} {
     if {[dict get $p initial-labels] ne ""} {
         return [::VMDance::Algo::starting_labels [dict get $p initial-labels] [dict get $c frames]]
     }
-    set first [dict create kinit [dict get $p initial-kinit] percentage [dict get $p initial-percentage]]
+    set first [dict create kinit [dict get $p initial-kinit] percentage [dict get $p initial-percentage] tol 0]
     set r [output [_call $c [list cluster kmeans [dict get $p initial] [dict get $req metric] $first {}] "HELM: the first clustering"] $nf]
     # (numbered 0, 1 … without gaps, as CPP-MDANCE numbers HELM's leaves: a
     # cluster of the first clustering can be empty)
@@ -860,7 +1055,17 @@ proc ::VMDance::Job::_cluster {c req lo hi {initial ""}} {
     }
     set inner [list $lo $hi]
     _progress $lo "$label[expr {$k ne "" ? ", k = $k" : ""}]"
-    if {[catch {_call $c [list cluster $a $k [dict get $req metric] [dict get $req params] $initial] $label} raw opts]} {
+    # (made already by an elbow's scan of the library v2, for this very
+    # request: its answer, or its error, as the call would give them)
+    variable scanned
+    set key [list $k [dict get $req metric] [dict get $req params]]
+    if {[dict exists $scanned $key]} {
+        lassign [dict get $scanned $key] ok raw
+        set failed [expr {$ok ? 0 : [catch {error $raw} raw opts]}]
+    } else {
+        set failed [catch {_call $c [list cluster $a $k [dict get $req metric] [dict get $req params] $initial] $label} raw opts]
+    }
+    if {$failed} {
         # (a later split of DIVINE's, of a cluster too small for its NANI's
         # two seeds, which the backend calls kClusters: Algo::check_combination
         # can check the first only)
@@ -940,7 +1145,7 @@ proc ::VMDance::Job::_scan_scores {c recs a at} {
 # the molecule, the frames, the clustering and the plugin's measures.
 proc ::VMDance::Job::_result {c req cl t0} {
     set m [dict get $req mol]
-    set q [dict filter $req key mol sel fit first last step algorithm k metric params atoms fitatoms]
+    set q [dict filter $req key mol sel fit fitframe fitmove first last step algorithm k metric params atoms fitatoms]
     set r [dict create format 1 request $q molecule [_molecule $req] \
         frames [dict get $c frames] natoms [dict get $c natoms]]
     set r [dict merge $r [dict remove $cl backend]]
@@ -1006,7 +1211,7 @@ proc ::VMDance::Job::_same_coords {c r what} {
 # which).
 proc ::VMDance::Job::_scan {kind req recs t0 {digest ""}} {
     variable backend
-    set keys [expr {$kind eq "elbow" ? {mol sel fit first last step atoms fitatoms algorithm metric params ks radii stability} : {mol sel fit first last step atoms fitatoms}}]
+    set keys [expr {$kind eq "elbow" ? {mol sel fit fitframe fitmove first last step atoms fitatoms algorithm metric params ks radii stability} : {mol sel fit fitframe fitmove first last step atoms fitatoms}}]
     dict create format 1 kind $kind request [dict filter $req key {*}$keys] \
         molecule [_molecule $req] frames [dict get $req frames] \
         natoms [dict get $req natoms] records $recs digest $digest backend $backend \
@@ -1082,6 +1287,63 @@ proc ::VMDance::Job::_do_elbow {req} {
     # (HELM's records are scored at the end)
     set hi [expr {[dict get $req algorithm] eq "helm" ? 0.95 : 1.0}]
     set invalid [::VMDance::_get $req invalid {}]
+    # With the library v2, the values of k are made at once on its threads
+    # (_scan_v2), those that would be called: not a value refused already,
+    # nor one the checks before a call refuse. The loop below then goes on as
+    # it would, each value's answer read from the scan (Job::_cluster), its
+    # checks after the call made, its record kept. Not for a scan with the
+    # stability (its other seedings are called at each k) nor eQual's radii.
+    set a [dict get $req algorithm]
+    if {[lindex $backend 0] eq "library" && [::VMDance::Backend::lib_api] >= 2 && ![llength $radii] &&
+            $a in {kmeans divine helm} && ![llength [::VMDance::_get $req stability {}]]} {
+        set nf [llength [dict get $c frames]]
+        set run {}
+        foreach k $ks {
+            if {[dict exists $invalid $k]} continue
+            if {$a eq "helm" && [catch {::VMDance::Algo::check_starting $k [dict get $req params] [::VMDance::Algo::starting_sizes $initial] $nf}]} continue
+            if {$a eq "divine" && [catch {_divine_repeats $c $k [dict get $req params]}]} continue
+            lappend run $k
+        }
+        if {[llength $run] > 1} {
+            # (the library runs a scan's largest values first, which keeps its
+            # threads busy to the end, so a scan cancelled keeps its largest:
+            # a long elbow is scanned in chunks of the smallest values first,
+            # and a cancel keeps the low end, the part of an elbow that is read)
+            variable scan_whole; variable scan_chunk
+            set chunks [list $run]
+            if {[llength $run] > $scan_whole} {
+                set chunks {}
+                for {set f 0} {$f < [llength $run]} {incr f $scan_chunk} {
+                    lappend chunks [lrange $run $f [expr {$f + $scan_chunk - 1}]]
+                }
+            }
+            set stop 0
+            set done 0
+            foreach chunk $chunks {
+                set a0 [expr {$lo + ($hi - $lo) * $done / [llength $run]}]
+                incr done [llength $chunk]
+                set b0 [expr {$lo + ($hi - $lo) * $done / [llength $run]}]
+                if {[_scan_v2 $c $req $chunk $initial $a0 $b0]} { set stop 1; break }
+            }
+            if {$stop} {
+                # (cancelled: the values it made are kept, as a scan
+                # cancelled one value after another keeps those before)
+                variable scanned
+                foreach k $ks {
+                    set key [list $k [dict get $req metric] [dict get $req params]]
+                    if {![dict exists $scanned $key] || ![lindex [dict get $scanned $key] 0]} continue
+                    dict set req k $k
+                    if {![catch {_cluster $c $req $hi $hi $initial} cl]} {
+                        lappend recs [dict merge [dict create k $k] [_record $cl]]
+                    }
+                }
+                _elbow_partial $req $recs $t0 $c
+                error "cancelled"
+            }
+            # (the values are made: the loop reads them)
+            set lo [expr {$hi - 0.01}]
+        }
+    }
     foreach k $ks {
         if {$cancelled} { _elbow_partial $req $recs $t0 $c; error "cancelled" }
         if {[dict exists $invalid $k]} {
@@ -1199,6 +1461,9 @@ proc ::VMDance::Job::_do_adopt {req} {
     set c [_coords $in 0.0 0.8]
     _same_coords $c $s "the scan"
     set q [dict merge $in [dict filter [dict get $s request] key algorithm metric params]]
+    # (whether the scan moved VMD's coordinates, for the record: they are
+    # not moved again here, _input_of leaves fitmove out)
+    dict set q fitmove [::VMDance::_get [dict get $s request] fitmove 0]
     foreach key {algorithm k metric params} { if {[dict exists $rec $key]} { dict set q $key [dict get $rec $key] } }
     if {[dict exists $rec radius]} { dict set q params threshold [dict get $rec radius]; dict set q k "" }
     _result $c $q [dict get $rec clustering] $t0
@@ -1497,7 +1762,7 @@ proc ::VMDance::Job::_do_pick {req} {
     if {$once != [llength $idx]} { error "the backend picked a frame more than once ([llength $idx] picks of $once frames)" }
     # (what tells their frames, as a clustering's: their numbers are VMD's
     # only while the molecule has them, Results::picks_ok)
-    dict create params $p input [dict filter $req key mol sel fit first last step atoms fitatoms] \
+    dict create params $p input [dict filter $req key mol sel fit fitframe fitmove first last step atoms fitatoms] \
         molecule [_molecule $req] frames [dict get $c frames] \
         rows $idx vmdframes [lmap i $idx {lindex [dict get $c frames] $i}] \
         digest [dict get $c digest] shape [_shape $c] \
@@ -1520,7 +1785,7 @@ proc ::VMDance::Job::_input_of {q frames natoms} {
     set m [dict get $q mol]
     if {![::VMDance::Mol::exists $m]} { error "the clustered molecule is not loaded (reopen it, or load the session with its molecule)" }
     dict set q last [lindex $frames end]
-    set in [dict filter $q key mol sel fit first last step]
+    set in [dict filter $q key mol sel fit fitframe first last step]
     set atoms [dict exists $q atoms]
     if {$atoms} {
         dict set in sel [dict get $q atoms]

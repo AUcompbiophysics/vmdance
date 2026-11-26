@@ -1,6 +1,7 @@
 # The quick-start guide's benchmark: CPP-MDANCE's program (mdance-cli, run
 # in the background) against its library (mdance_tcl, loaded into VMD), on
-# the guide's trajectory, fitted as the guide's script fits it. Every job is
+# the guide's trajectory, fitted as the guide's script fits it (the plugin's
+# fit onto the script's frame, VMD's coordinates moved). Every job is
 # timed whole, as a user waits for it: the coordinates written, the backend,
 # its answer read, and the plugin's own measures. Writes the results as
 # LaTeX macros (bench.tex).
@@ -27,8 +28,14 @@ proc median {l} {
     set n [llength $l]
     expr {$n % 2 ? [lindex $l [expr {$n / 2}]] : ([lindex $l [expr {$n / 2 - 1}]] + [lindex $l [expr {$n / 2}]]) / 2.0}
 }
-# VMD's resident memory, in MB (ps: Linux and macOS)
-proc rss_mb {} { expr {[string trim [exec ps -o rss= -p [pid]]] / 1024.0} }
+# VMD's resident memory, in MB (ps: Linux and macOS; on Windows its working
+# set, from PowerShell)
+proc rss_mb {} {
+    if {$::tcl_platform(platform) eq "windows"} {
+        return [expr {[string trim [exec powershell -NoProfile -Command "(Get-Process -Id [pid]).WorkingSet64"]] / 1048576.0}]
+    }
+    expr {[string trim [exec ps -o rss= -p [pid]]] / 1024.0}
+}
 # Seconds as the table shows them
 proc secs {s} { format [expr {$s < 10 ? "%.2f" : "%.1f"}] $s }
 
@@ -91,7 +98,7 @@ if {[catch {
         if {![file isfile [file join $data $f]]} { error "no $f in \"$data\": set TAU_DATA to BitQT's examples folder" }
     }
     # the guide's trajectory and fit: the frame its script fits on, read there
-    if {![regexp -line {^set fitframe ([0-9]+)$} [read [set fh [open [file join $here quickstart.tcl]]]] -> fitframe]} {
+    if {![regexp -line {^set fitframe ([0-9]+)\s*$} [read [set fh [open [file join $here quickstart.tcl]]]] -> fitframe]} {
         error "quickstart.tcl sets no fitframe"
     }
     close $fh
@@ -99,14 +106,12 @@ if {[catch {
     mol addfile [file join $data aligned_original_tau_6K.dcd] waitfor all molid $m
     animate delete beg 0 end 0 $m
     set backbone "resid 3 to 12 and name N CA C O H"
-    set ref [atomselect $m $backbone frame $fitframe]
-    set fit [atomselect $m $backbone]
+    # (the fit of the guide's script, -fit -fitframe -fitmove 1: every frame,
+    # the whole molecule, moved onto that frame by the plugin's own fit)
+    ::VMDance::Coords::align $m $backbone $fitframe
     set all [atomselect $m all]
-    for {set f 0} {$f < [molinfo $m get numframes]} {incr f} {
-        $fit frame $f; $all frame $f; $all move [measure fit $fit $ref]
-    }
     set natoms [$all num]
-    $ref delete; $fit delete; $all delete
+    $all delete
 
     keep bnFrames [molinfo $m get numframes]
     keep bnAtomsBackbone 50
@@ -116,7 +121,22 @@ if {[catch {
     set cpu ""
     catch { set cpu [exec sysctl -n machdep.cpu.brand_string] }
     if {$cpu eq ""} { catch { regexp -line {^model name\s*:\s*(.+)$} [exec cat /proc/cpuinfo] -> cpu } }
+    if {$cpu eq "" && $::tcl_platform(platform) eq "windows"} {
+        catch { set cpu [exec powershell -NoProfile -Command "(Get-CimInstance Win32_Processor).Name"] }
+    }
     keep bnMachine [string trim $cpu]
+    # (its cores: the library's second interface runs a scan's values of k
+    # on them)
+    set cores ""
+    catch { set cores $::env(NUMBER_OF_PROCESSORS) }
+    if {$cores eq ""} { catch { set cores [string trim [exec getconf _NPROCESSORS_ONLN]] } }
+    keep bnCores $cores
+    # (the VMD and the CPP-MDANCE it was timed with: the guide's other numbers
+    # may be made elsewhere, numbers.tcl)
+    keep bnVMD [vmdinfo version]
+    set commit ""
+    catch { set commit [exec git -C [file dirname [file dirname [file dirname $cli]]] rev-parse --short HEAD] }
+    keep bnBackendCommit $commit
 
     # each mode in turn: a warm-up of each job (not counted), then the jobs,
     # each `reps` times; VMD's memory before and after
@@ -125,6 +145,9 @@ if {[catch {
     foreach mode {cli library} {
         if {$mode eq "cli"} { vmdance backend -mode cli -cli $cli } else { vmdance backend -mode library -library $lib }
         puts "\n$mode: [dict get [vmdance backend] using]"
+        # (which interface of the library's: 1, a call at a time inside VMD;
+        # 2, datasets and jobs on the library's own threads)
+        if {$mode eq "library"} { set libapi [::VMDance::Backend::lib_api] }
         set mem0($mode) [rss_mb]
         foreach {input sel} [list backbone $backbone all all] {
             foreach {name label sub opts} $jobs {
@@ -137,6 +160,10 @@ if {[catch {
                     lappend ts $s
                 }
                 set t($mode,$input,$name) [median $ts]
+                # (how far apart a job's runs are, of their median: the
+                # largest of the mode's jobs)
+                set sp [expr {([::tcl::mathfunc::max {*}$ts] - [::tcl::mathfunc::min {*}$ts]) / [median $ts]}]
+                if {![info exists spread($mode)] || $sp > $spread($mode)} { set spread($mode) $sp }
                 set got($mode,$input,$name) $what
                 puts [format "  %-8s %-9s %-10s %s s (%s)" $mode $input $name [secs $t($mode,$input,$name)] [join [lmap s $ts {secs $s}] " "]]
             }
@@ -173,6 +200,15 @@ if {[catch {
     if {[info exists t(cli,backbone,stability)]} {
         keep bnStabilityCli [secs $t(cli,backbone,stability)]
         keep bnStabilityLib [secs $t(library,backbone,stability)]
+    }
+    keep bnLibApi $libapi
+    keep bnSpreadCli [format %.0f [expr {100 * $spread(cli)}]]
+    keep bnSpreadLib [format %.0f [expr {100 * $spread(library)}]]
+    if {[info exists t(cli,backbone,elbow)]} {
+        keep bnElbowCli [secs $t(cli,backbone,elbow)]
+        keep bnElbowLib [secs $t(library,backbone,elbow)]
+        keep bnElbowAllCli [secs $t(cli,all,elbow)]
+        keep bnElbowAllLib [secs $t(library,all,elbow)]
     }
     keep bnMemCli [format %.0f [expr {$mem1(cli) - $mem0(cli)}]]
     keep bnMemLib [format %.0f [expr {$mem1(library) - $mem0(library)}]]

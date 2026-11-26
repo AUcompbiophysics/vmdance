@@ -69,7 +69,10 @@ and Molywood Studio. docs/design.rst and docs/internals.rst describe it.
   (expr compares "1o" as a string and reads "010" as octal).
 - VMD state is borrowed: a job never moves VMD's frame or coordinates (the
   fit is computed on values: `coordtrans`, not `vectrans`, which drops the
-  translation); selections are made and deleted at the global level
+  translation) — but for a request with `fitmove 1`, which asks for it:
+  Coords::align moves every frame, all atoms, onto `fitframe` ("" the first
+  clustered frame) before the rows are read, and leaves a frame already
+  there unmoved (`_still`) so the kept rows stay valid; selections are made and deleted at the global level
   (Mol::sel, Mol::free); the plugin's representations are found by name
   (mol repname) and only they are deleted; `mol addrep` settings are read
   and put back (Viz::_mol_settings); the user field is written only when
@@ -464,8 +467,8 @@ and Molywood Studio. docs/design.rst and docs/internals.rst describe it.
   so). A frame's fingerprint is then not a number (`regexp -nocase
   {nan|inf}`), and so is one of finite coordinates past ~1e19 (VMD's float
   radius of gyration overflows).
-- CPP-MDANCE's Tcl binding looks for its options among every argument,
-  from objv[0]: it makes the text of the coordinates' list (~19 bytes a
+- CPP-MDANCE's Tcl binding of the first interface (API 1) looks for its
+  options among every argument, from objv[0]: it makes the text of the coordinates' list (~19 bytes a
   number; Tcl 8.6 panics past 2 GB and VMD aborts) and Tcl keeps ~120 bytes
   a number of it until VMD quits (~180 at the call's peak). The text is the
   CSV's less a byte (Job::_library_fits). A test that builds a large list
@@ -474,6 +477,44 @@ and Molywood Studio. docs/design.rst and docs/internals.rst describe it.
   job's calls are given one (Job::_call's lib_rows; a new list at every k,
   each read again from VMD, tripled a scan's time). Never change it, nor
   make a text of anything that holds it.
+- CPP-MDANCE's library v2 (API 2, its branch feat-library-v2, PR
+  mqcomplab/CPP-MDANCE#62; `::mdance::info` says `api 2`) is reached by
+  Job::_call_v2 (Backend::lib_api, read once when the library is loaded):
+  one dataset a job (`lib_data`, freed by `_free_lib_data` when the job
+  ends), every call a job of the library's (`::mdance::job start`) on a
+  thread of its own, polled every 100 ms (VMD stays usable; Cancel cancels
+  it). It makes no text of the coordinates, refuses bad options (an unknown
+  name, a value that is not a number) instead of ignoring them, and fails
+  with a message where API 1 crashed (DIVINE's CompSim splits:
+  `_library_divine` is API 1's only). tests/test_library_v2.tcl tests it;
+  test_hardening2_h3 tests API 1 and skips for API 2. A call command of v2
+  can be renamed (a test's wrapper): it knows its call by its ClientData,
+  not its name (fixed 2026-11-25; the first build of v2 called a renamed
+  `kmeans_h3` "unknown"). An elbow of KMeans NANI, DIVINE or HELM (not
+  with -stability, not eQual's radii) makes its values at once, one
+  `::mdance::scan` (Job::_scan_v2: the values that would be called), and
+  the loop reads them from `scanned` (keyed {k metric params}) through
+  Job::_cluster, whose checks after a call, records and "not run" are
+  unchanged. A scan cancelled answers with the values it made (the others
+  "cancelled"), kept as Job::partial. The library runs the largest values
+  first, so an elbow of more than `scan_whole` (24) values is scanned in
+  chunks of `scan_chunk` (16), the smallest first: a Cancel keeps the low
+  end (it kept k 185 to 200 of 2 to 200 in the first test drive in VMD,
+  2026-11-25).
+- CPP-MDANCE's main since PR #61 (3a2f073) seeds k-means' KmeansPP and
+  Random from the clock (it was a fixed seed): two runs, and the program
+  and the library, give different labels. A comparison of labels between
+  runs or backends seeds with StratAll (and a percentage that holds k
+  frames: two_state's 24 frames at 50%); KmeansPP's checks of the fixtures
+  fail against it, on develop too. The library v2 takes `-seed` and
+  reports the `seed` it used; mdance-cli has no seed option.
+- On Windows (VMD 2.0, text mode): the suites that load the shared systems
+  (3ptb: VMDANCE_SYSTEMS) cannot run without them; test_session and
+  test_hardening2_h1 stop at `file attributes -permissions` (Unix only);
+  test_hardening2_fx_g3's F73 runs GNU `timeout`, which Windows' TIMEOUT
+  is not. The same on develop: environment, not the plugin. The program
+  of a MinGW build needs libstdc++-6.dll and its siblings beside it; the
+  library v2 carries them.
 - A progress throttle that drops a message can drop the last one before a
   call that blocks VMD (the library's): the window then shows a stale step
   through the whole call. GUI::_progress throttles only the counts of one

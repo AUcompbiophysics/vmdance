@@ -177,7 +177,8 @@ The plugin runs CPP-MDANCE's program or its library:
 
 - the program, ``mdance-cli``, runs in the background, and VMD is free
   meanwhile;
-- the library runs inside VMD: no files, and VMD waits.
+- the library runs inside VMD, with no files: its v2 in the background,
+  as the program (Cancel stops it); before v2, VMD waits.
 
 .. code-block:: tcl
 
@@ -185,4 +186,5 @@ The plugin runs CPP-MDANCE's program or its library:
    vmdance backend -mode cli -cli /path/to/mdance-cli
    vmdance backend -mode library -library /path/to/mdance_tcl.so
 
-Both give the same clusters (the reference tests compare them).
+Both give the same clusters (the reference tests compare them). The
+library v2 is the faster, most of all for scans (:doc:`install`).

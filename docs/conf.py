@@ -15,6 +15,14 @@ if importlib.util.find_spec("sphinx_copybutton") is not None:
     extensions.insert(0, "sphinx_copybutton")
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "tools", "diagrams"]
 highlight_language = "tcl"
+# The window's icons (docs/_static/icons, drawn large by docs/tools/icons.py
+# from the plugin's own), as substitutions in every page: |icon-open|,
+# |icon-tab-populations| ... (the file's name, its _ written -)
+import pathlib
+rst_prolog = "".join(
+    f".. |icon-{p.stem.replace('_', '-')}| image:: /_static/icons/{p.name}\n"
+    f"   :class: tb-icon\n   :alt: icon\n\n"
+    for p in sorted((pathlib.Path(__file__).parent / "_static" / "icons").glob("*.png")))
 # (MDANCE's documentation's)
 pygments_style = "tango"
 suppress_warnings = ["misc.highlighting_failure"]

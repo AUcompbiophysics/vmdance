@@ -4,29 +4,31 @@ A short guide, from an install to the clusters of a tau peptide's trajectory
 (BitQT's examples), in
 the window and in a script, with a gallery of the 13 plots. It is written for
 the JCIM article's Supporting Information. It is kept apart from `docs/`, the
-online documentation: it reads two of that folder's diagrams and the logo,
-and writes nothing there.
+online documentation: it reads two of that folder's diagrams, the logo and
+the window's icons drawn large (`../docs/_static/icons`), and writes nothing
+there. Both use the same example and setup: the documentation's tutorial
+goes further with it.
 
 The analysis: the PDB as the topology, its own frame deleted after the DCD
-is loaded (6001 frames); every frame fitted on frame 999 in VMD, on
+is loaded (6001 frames); every frame fitted on frame 999 by VMDance, which moves VMD's coordinates there (`-fitframe 999 -fitmove 1`), on
 `resid 3 to 12 and name N CA C O H` (50 atoms); an elbow scan with the
 stability of NANI's seedings; KMeans NANI at k 6, as MDANCE's own tutorial
-(Davies-Bouldin's sharpest dip; the seedings agree at k 2 and 5: the guide
+(a dip of Davies-Bouldin's; the seedings agree at k 2 and 5: the guide
 says so); the two halves as
 groups; DIVINE, HELM, eQual and a sweep for a second opinion.
 
 | File | What it is |
 | --- | --- |
 | `vmdance-quickstart.tex` | the guide (LaTeX) |
-| `quickstart.tcl` | the guide's script, printed in it as it is |
+| `quickstart.tcl` | the guide's script, printed in it as it is, cell by cell (its `# %% name` lines) |
 | `numbers.tcl` | runs that script in text-mode VMD, and writes every number the guide quotes |
 | `numbers.tex` | those numbers, as LaTeX macros (made: do not edit) |
 | `bench.tcl` | times the same jobs with CPP-MDANCE's program and with its library |
 | `bench.tex` | those times, as LaTeX macros (made: do not edit) |
 | `figures.tcl` | runs the same script in VMD with its window, and writes `figures/` |
-| `figures/` | the gallery (`gallery_<plot>.pdf`), the representatives (`main_3d.png`), the window (`window*.png`) (made: do not edit) |
+| `figures/` | the gallery (`gallery_<plot>.pdf`), the representatives (`main_3d.png`), the window (`window*.png`), and on Windows its views (`view_*.png`), the export dialogs (`dialog_*.png`) and the File menu (`menu_file.png`) (made: do not edit) |
 | `annotate.py` | numbers the window's parts, and crops the 3D view to the molecule (Pillow) |
-| `macos_windows.swift` | lists VMD's windows, so that `screencapture` takes the VMDance window alone (macOS) |
+| `macos_windows.swift` | lists VMD's windows, so that `screencapture` takes the VMDance window alone (macOS); on Windows the pictures are taken by `../docs/tools/capture_win.ps1`, and the File menu's by `../docs/tools/capture_menu.ps1` |
 | `Makefile` | builds it all |
 
 ## Build the PDF
@@ -37,6 +39,9 @@ Needs pdfLaTeX and latexmk (TeX Live), with the packages `libertinus`,
 ```sh
 make            # vmdance-quickstart.pdf, from numbers.tex and figures/
 ```
+
+XeLaTeX builds it too, Tectonic (one program, which fetches the packages) among
+them: `tectonic -X compile --outdir build vmdance-quickstart.tex`.
 
 ## Make the numbers and the figures again
 
@@ -52,10 +57,10 @@ make bench   VMD=/path/to/vmd TAU_DATA=/path/to/BitQT/examples   # bench.tex wri
 ```
 
 `make bench` also needs CPP-MDANCE's library (`MDANCE_LIB`, or a build with
-`-DBUILD_TCL=ON` beside the repository). It takes about ten minutes, and its
-times are the machine's: run it on a machine otherwise idle. `make check`
-does not compare them. With the library, VMD's memory grows by about a
-gigabyte during it.
+`-DBUILD_TCL=ON` beside the repository): its v2, which the guide's section
+describes. It took 23 minutes on the 4-core
+PC of the table, and its times are the machine's: run it on a machine
+otherwise idle. `make check` does not compare them.
 
 `MDANCE_CLI` names the program; by default it is the CPP-MDANCE build beside
 the repository (`../CPP-MDANCE/build/cli/mdance-cli`). VMD runs with an empty
@@ -65,9 +70,11 @@ commit), how long it took and the session's size.
 
 `make figures` opens VMD's windows on the screen for a minute: the figures
 are drawn by Tk, which text-mode VMD cannot load. The window's picture is
-taken on macOS only (`screencapture`, which needs the terminal to be allowed
-to record the screen); elsewhere `figures/window*.png` are kept as they are.
+taken on macOS (`screencapture`, which needs the terminal to be allowed to
+record the screen) and on Windows, where its other views, the two dialogs and
+the File menu are taken too; elsewhere `figures/window*.png` are kept as they
+are.
 
-The numbers and figures were made with CPP-MDANCE a5d197b (its main,
-0546995, and two commits that change only the release builds) and VMD
-2.0.0a6 on an Apple M1 Max.
+The numbers, the benchmark and the figures were made with CPP-MDANCE 9a3747c
+(its library v2, pull request #62) and VMD 2.0.0rc1 on Windows, on an Intel
+N100.

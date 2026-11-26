@@ -40,7 +40,7 @@ check "  DIVINE's end-mode the command's only: not in the window, k" [expr {
     "end-mode" in [${A}::param_names divine] && [dict get [${A}::defaults divine] end-mode] eq "k" &&
     ![${A}::window_hides helm merge-scheme] && [llength [${A}::window_params helm]] == [llength [${A}::params helm]]}]
 set p [${A}::check_params kmeans {kinit CompSim}]
-check "check_params completes the defaults" [expr {$p eq {kinit CompSim percentage 10}}]
+check "check_params completes the defaults" [expr {$p eq {kinit CompSim percentage 10 tol 0}}]
 check "  an unknown parameter names the valid ones" [string match "*-kinitt is not a parameter of KMeans NANI*-kinit, -percentage*" [err {${A}::check_params kmeans {kinitt x}}]]
 check "  a choice out of its values" [string match "*-kinit must be one of StratAll*" [err {${A}::check_params kmeans {kinit Nope}}]]
 foreach {v why} {1o "whole number" 2.5 "whole number" 010 "whole number" "" "-percentage is needed" 0 "at least 1" 101 "at most 100" ">f" "whole number" "|id" "whole number"} {
@@ -80,6 +80,13 @@ check "  with KmeansPP taken" [expr {[err {${A}::check_combination kmeans 11 {ki
 # the backend's arguments
 set argv [${A}::cli_args kmeans 5 MSD [${A}::check_params kmeans {}] 10 in.csv out.json]
 check "cli_args: KMeans" [expr {$argv eq {--algorithm kmeans --input in.csv --output out.json --natoms 10 --metric MSD --nclusters 5 --kinit StratAll --percentage 10}}]
+# (k-means' tolerance: passed only when asked, so a CPP-MDANCE before -tol still runs)
+set argv [${A}::cli_args kmeans 5 MSD [${A}::check_params kmeans {tol 1e-4}] 10 in.csv out.json]
+check "cli_args: KMeans with MDANCE's stop (--tol 1e-4)" [string match "* --percentage 10 --tol 1e-4" $argv]
+check "lib_args: -tol 1e-4" [expr {[${A}::lib_args kmeans [${A}::check_params kmeans {tol 1e-4}] MSD] eq {-metric MSD -kinit StratAll -percentage 10 -tol 1e-4}}]
+check "lib_args: no -tol for 0" [expr {"-tol" ni [${A}::lib_args kmeans [${A}::check_params kmeans {tol 0}] MSD]}]
+check "a negative tolerance is refused" [string match "-tol must be at least 0*" [err {${A}::check_params kmeans {tol -1}}]]
+check "a tolerance that is not a number is refused" [string match "-tol must be a number*" [err {${A}::check_params kmeans {tol 1e-4x}}]]
 set argv [${A}::cli_args helm 4 MSD [${A}::check_params helm {}] 10 in.csv out.json init.csv]
 check "  HELM: the starting labels file, not the plugin's own parameters, no trim when not trimming" [expr {
     [lsearch $argv --initial-labels] >= 0 && [lsearch $argv --initial] < 0 && [lsearch $argv --initial-kinit] < 0 &&

@@ -86,8 +86,18 @@ package require vmdance
 set ::VMDance::Prefs::file ""
 set R ::VMDance::Results
 
+# (these are the first interface's calls: a library of the second, API 2,
+# takes a dataset and runs its calls as jobs, and tests/test_library_v2.tcl
+# tests it)
+proc h3_api2 {} {
+    if {[real_lib] eq ""} { return 0 }
+    ::VMDance::Backend::load_lib [real_lib]
+    expr {[::VMDance::Backend::lib_api] >= 2}
+}
 if {[real_lib] eq "" || [real_cli] eq ""} {
     skip "N12, N13: the library's calls" "no mdance_tcl library or mdance-cli"
+} elseif {[h3_api2]} {
+    skip "N12, N13: the first interface's library calls" "the library is API 2 (tests/test_library_v2.tcl tests it)"
 } else {
     set m [load_system two_state]
     use_lib

@@ -45,8 +45,8 @@ Principles
 
   - The backend's JSON is read by a reader of the plugin's own, and
     checked whole before anything is published.
-  - Sessions, the MDANCE plugin's sessions, label files and preferences
-    are parsed as data, never evaluated.
+  - Sessions, label files and preferences are parsed as data, never
+    evaluated.
   - Numbers are checked before ``expr`` sees them. It would compare
     ``1o`` as a string, read ``010`` as octal, rewrite ``1e10`` as a
     float, and fail on ``NaN``.

@@ -1592,26 +1592,40 @@ update
 set guide [$w.help.t get 1.0 end]
 destroy $w.help
 check "  the Cluster button's tip and the quick guide say what the library does (they promised the background)" [expr {
-    [string match "*in the background (with the library, VMD waits until it ends)" $::VMDance::Tip::text($w.tb.cluster)] &&
-    [string match "*runs in the background; Cancel stops it and keeps what was there (with the library, VMD waits until each clustering ends, and Cancel acts then).*" $guide]}]
+    [string match "*in the background (with CPP-MDANCE's library before its v2, VMD waits until it ends)" $::VMDance::Tip::text($w.tb.cluster)] &&
+    [string match "*runs in the background; Cancel stops it and keeps what was there (with CPP-MDANCE's library before its v2, VMD waits until each clustering ends, and Cancel acts then).*" $guide]}]
+# (the library's interface: 1 blocks VMD during a call, 2 runs it as a job of its own)
+proc gui_lib_api {} {
+    if {[real_lib] eq ""} { return 0 }
+    ::VMDance::Backend::load_lib [real_lib]
+    ::VMDance::Backend::lib_api
+}
 if {[real_lib] eq ""} {
     skip "N13: the library in the window" "no mdance_tcl library"
 } else {
     use_lib
     ${G}::backend_changed
-    rename ::mdance::kmeans ::mdance::kmeans_gui
-    proc ::mdance::kmeans {args} {
-        lappend ::lib_status $::VMDance::GUI::S(status)
-        ::mdance::kmeans_gui {*}$args
-    }
+    set api [gui_lib_api]
+    # (what the status says as the call starts: API 1's call, or API 2's job)
+    set wrapped [expr {$api >= 2 ? "job" : "kmeans"}]
+    rename ::mdance::$wrapped ::mdance::${wrapped}_gui
+    proc ::mdance::$wrapped {args} [string map [list %W $wrapped] {
+        if {"%W" ne "job" || [lindex $args 0] eq "start"} { lappend ::lib_status $::VMDance::GUI::S(status) }
+        uplevel 1 [list ::mdance::%W_gui {*}$args]
+    }]
     set ::lib_status {}
     ::VMDance::Coords::forget
     ${G}::cluster
     wait_idle
-    rename ::mdance::kmeans {}
-    rename ::mdance::kmeans_gui ::mdance::kmeans
-    check "N13: through the library's call the status says the step, that the library runs it and that VMD waits ([lindex $::lib_status 0])" [expr {
-        $::lib_status eq [list "KMeans NANI, k = 2, in the library: VMD does not respond until it ends…"] && [lindex [${R}::meta backend] 0] eq "library"}]
+    rename ::mdance::$wrapped {}
+    rename ::mdance::${wrapped}_gui ::mdance::$wrapped
+    if {$api >= 2} {
+        check "N13: as the library v2's call starts the status says the step and that the library runs it, not that VMD waits ([lindex $::lib_status 0])" [expr {
+            $::lib_status eq [list "KMeans NANI, k = 2, in the library…"] && [lindex [${R}::meta backend] 0] eq "library"}]
+    } else {
+        check "N13: through the library's call the status says the step, that the library runs it and that VMD waits ([lindex $::lib_status 0])" [expr {
+            $::lib_status eq [list "KMeans NANI, k = 2, in the library: VMD does not respond until it ends…"] && [lindex [${R}::meta backend] 0] eq "library"}]
+    }
     # (Automatic with no program found: the library, said nowhere but in Settings)
     ::VMDance::Backend::configure -mode auto -cli ""
     rename ::VMDance::Backend::find_cli ::VMDance::Backend::find_cli_gui
@@ -1635,11 +1649,18 @@ if {[real_lib] eq ""} {
     rename ::VMDance::Backend::find_cli_gui ::VMDance::Backend::find_cli
     use_fake
     ${G}::backend_changed
-    check "  Automatic with no program found: Setup says it took the library, and that VMD waits ($note)" [string match \
-        "*The library clusters, in VMD, which does not respond during a clustering (Automatic found no mdance-cli: Settings ▸ Backend)." $note]
-    check "  a sweep of more than 50 clusterings in the library: its question says VMD waits for each, and Cancel stops between two (it said the background)" [expr {
-        [::VMDance::_get $::asked -detail ""] eq "Each clustering runs in the library, in VMD, which does not respond during one; Cancel stops the sweep between two." &&
-        ![set ${S}(busy)]}]
+    if {$api >= 2} {
+        check "  Automatic with no program found: Setup says it took the library v2, which clusters in the background ($note)" [string match \
+            "*The library clusters, in VMD, in the background; Cancel stops it (Automatic found no mdance-cli: Settings ▸ Backend)." $note]
+        check "  a sweep of more than 50 clusterings in the library v2: its question says the background, as the program's" [expr {
+            [::VMDance::_get $::asked -detail ""] eq "It runs in the background; Cancel stops it." && ![set ${S}(busy)]}]
+    } else {
+        check "  Automatic with no program found: Setup says it took the library, and that VMD waits ($note)" [string match \
+            "*The library clusters, in VMD, which does not respond during a clustering (Automatic found no mdance-cli: Settings ▸ Backend)." $note]
+        check "  a sweep of more than 50 clusterings in the library: its question says VMD waits for each, and Cancel stops between two (it said the background)" [expr {
+            [::VMDance::_get $::asked -detail ""] eq "Each clustering runs in the library, in VMD, which does not respond during one; Cancel stops the sweep between two." &&
+            ![set ${S}(busy)]}]
+    }
 }
 # (the review of N13: Cancel clicked during a library call, which VMD reads as the call ends, came to no
 # job when the job ended right after its call, and PRIME, a pick, a scan's last k were kept all the same)
@@ -1649,17 +1670,21 @@ if {[real_lib] eq ""} {
     use_lib
     ${G}::backend_changed
     vmdance -mol $m -sel all -k 2 -kinit KmeansPP -quiet 1
-    rename ::mdance::prime ::mdance::prime_gui
-    proc ::mdance::prime {args} {
-        # (the click waits in the queue while VMD waits for the call)
-        event generate $::w.tb.cancel <ButtonPress-1> -when tail -x 5 -y 5
-        event generate $::w.tb.cancel <ButtonRelease-1> -when tail -x 5 -y 5
-        ::mdance::prime_gui {*}$args
-    }
+    # (API 1: the click waits in the queue while VMD waits for the call;
+    # API 2: it is clicked as the library's job starts, and read while it runs)
+    set wrapped [expr {[gui_lib_api] >= 2 ? "job" : "prime"}]
+    rename ::mdance::$wrapped ::mdance::${wrapped}_gui
+    proc ::mdance::$wrapped {args} [string map [list %W $wrapped] {
+        if {"%W" ne "job" || ([lindex $args 0] eq "start" && [lindex $args 1] eq "prime")} {
+            event generate $::w.tb.cancel <ButtonPress-1> -when tail -x 5 -y 5
+            event generate $::w.tb.cancel <ButtonRelease-1> -when tail -x 5 -y 5
+        }
+        uplevel 1 [list ::mdance::%W_gui {*}$args]
+    }]
     ${G}::prime
     wait_idle
-    rename ::mdance::prime {}
-    rename ::mdance::prime_gui ::mdance::prime
+    rename ::mdance::$wrapped {}
+    rename ::mdance::${wrapped}_gui ::mdance::$wrapped
     use_fake
     ${G}::backend_changed
     check "N13 (review): Cancel clicked during PRIME's library call cancels it as the call ends: PRIME not kept (it was, and the status gave its frame)" [expr {

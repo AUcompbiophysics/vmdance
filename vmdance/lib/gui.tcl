@@ -15,7 +15,7 @@ namespace eval ::VMDance::GUI {
     variable w .vmdance
     variable S
     array set S {
-        molid -1 molname "" sel "name CA" count "" fit 0 fitsel backbone fitnote ""
+        molid -1 molname "" sel "name CA" count "" fit 0 fitsel backbone fitframe "" fitmove 0 fitnote ""
         framemode all first 0 last -1 step 1 nframes ""
         algorithm kmeans metric MSD unavailable ""
         busy 0 status "Ready." readout "" readout_shown "" progress 0 tab populations
@@ -693,7 +693,7 @@ proc ::VMDance::GUI::_build_toolbar {} {
     _tb_button $f export export  Export  "Export results… ($k+E)\nthe clusters, the labels, the representatives' structures, each cluster's trajectory, the plots' data" {::VMDance::GUI::act export}
     _tb_button $f figure figure  Figures "Create figures… ($k+P)\nPDF, PNG or EPS of the plots" {::VMDance::GUI::act figures}
     _tb_sep $f s2
-    _tb_button $f cluster cluster Cluster "Cluster ($k+R)\nwith the algorithm and parameters of Setup, in the background (with the library, VMD waits until it ends)" {::VMDance::GUI::act cluster}
+    _tb_button $f cluster cluster Cluster "Cluster ($k+R)\nwith the algorithm and parameters of Setup, in the background (with CPP-MDANCE's library before its v2, VMD waits until it ends)" {::VMDance::GUI::act cluster}
     _tb_button $f elbow   elbow   Elbow   "Elbow scan\nthe same clustering at every k of Scans ▸ Elbow (eQual: at every radius)" {::VMDance::GUI::act elbow}
     _tb_button $f cancel  cancel  Cancel  "Cancel the running job (what was there is kept)" {::VMDance::GUI::act cancel}
     $f.cancel state disabled
@@ -1211,15 +1211,28 @@ proc ::VMDance::GUI::_build_setup {P} {
     pack $sf.step $sf.l -side left -padx {0 6}
     _row $I 4 "Every" $sf "Cluster every n-th frame: residence times are then in steps of n frames"
     set ff [ttk::frame $I.fit]
-    ttk::checkbutton $ff.on -text "Fit to the first frame on" -variable ${V}(fit) -command ::VMDance::GUI::_fit_changed
+    ttk::checkbutton $ff.on -text "Fit on" -variable ${V}(fit) -command ::VMDance::GUI::_fit_changed
     ttk::entry $ff.sel -textvariable ${V}(fitsel) -width 8
     pack $ff.on -side left
     pack $ff.sel -side left -fill x -expand 1 -padx {4 0}
     grid $ff -row 5 -column 0 -columnspan 2 -sticky ew -pady {2 0}
-    ::VMDance::Tip::add $ff.on "Superpose every frame on the first clustered frame by these atoms before clustering\n(computed on the values: VMD's coordinates are not moved).\nOff: the coordinates as they are (an aligned trajectory)."
+    ::VMDance::Tip::add $ff.on "Superpose every frame on the reference frame by these atoms before clustering.\nOff: the coordinates as they are (an aligned trajectory)."
+    # (the reference frame, "" the first clustered; and whether VMD's
+    # coordinates are moved onto it or the values only are fitted)
+    set fo [ttk::frame $I.fito]
+    ttk::label $fo.l -text "to frame"
+    ttk::entry $fo.f -textvariable ${V}(fitframe) -width 6
+    ttk::checkbutton $fo.mv -text "Move VMD's coordinates" -variable ${V}(fitmove) -command ::VMDance::GUI::_fit_note
+    pack $fo.l -side left -padx {22 0}
+    pack $fo.f -side left -padx {4 8}
+    pack $fo.mv -side left
+    grid $fo -row 6 -column 0 -columnspan 2 -sticky w -pady {2 0}
+    bind $fo.f <KeyRelease> ::VMDance::GUI::_fit_note
+    ::VMDance::Tip::add $fo.f "The frame every frame is superposed on: any frame of the molecule (-1: the last).\nEmpty: the first clustered frame."
+    ::VMDance::Tip::add $fo.mv "On: Cluster first moves every frame of the molecule, all of its atoms, onto the reference frame in VMD\n(as an alignment in VMD would: reload the trajectory to undo it), then clusters them.\nOff: the fit is computed on the values only; VMD's coordinates are not moved."
     # (with a fit, its atoms; without one, whether the frames look superposed)
     ttk::label $I.fn -textvariable ${V}(fitnote) -style Muted.TLabel -wraplength 300 -justify left
-    grid $I.fn -row 6 -column 0 -columnspan 2 -sticky w
+    grid $I.fn -row 7 -column 0 -columnspan 2 -sticky w
     grid columnconfigure $I 1 -weight 1
 
     set A [_section $P.alg "Algorithm" -padding {6 4}]
@@ -1457,10 +1470,17 @@ proc ::VMDance::GUI::_availability {{again 0}} {
     } else {
         set S(unavailable) ""
     }
-    # (the library runs in VMD, which waits for each call: said here, and
-    # when Automatic took it, finding no program, which nothing said)
+    # (a library of the first interface runs in VMD, which waits for each
+    # call: said here, and when Automatic took the library, finding no
+    # program, which nothing said; one of the second runs its calls on a
+    # thread of its own, as the program does)
     if {[_in_library]} {
-        set S(unavailable) [string trim "$S(unavailable) The library clusters, in VMD, which does not respond during a clustering[expr {[dict get [::VMDance::Backend::settings] -mode] eq "auto" ? " (Automatic found no mdance-cli: Settings ▸ Backend)" : ""}]."]
+        set auto [expr {[dict get [::VMDance::Backend::settings] -mode] eq "auto" ? " (Automatic found no mdance-cli: Settings ▸ Backend)" : ""}]
+        if {[::VMDance::Backend::lib_api] >= 2} {
+            set S(unavailable) [string trim "$S(unavailable) The library clusters, in VMD, in the background; Cancel stops it$auto."]
+        } else {
+            set S(unavailable) [string trim "$S(unavailable) The library clusters, in VMD, which does not respond during a clustering$auto."]
+        }
     }
 }
 # The chosen algorithm's logo (MDANCE's) beside Setup's chooser, at the
@@ -1480,8 +1500,8 @@ proc ::VMDance::GUI::_algo_logo {{have ""}} {
     }
     $page(setup).alg.logo configure -image $img
 }
-# Whether the backend in use is the library (VMD waits for each of its
-# calls).
+# Whether the backend in use is the library (one of the first interface
+# makes VMD wait for each of its calls).
 proc ::VMDance::GUI::_in_library {} {
     expr {![catch {::VMDance::Backend::current} u] && [lindex $u 0] eq "library"}
 }
@@ -1497,8 +1517,9 @@ proc ::VMDance::GUI::param_defaults {} {
 
 proc ::VMDance::GUI::_fit_changed {} {
     variable w; variable S; variable page
-    set e $page(setup).input.fit.sel
-    if {[winfo exists $e]} { $e state [expr {$S(fit) ? "!disabled" : "disabled"}] }
+    foreach e [list $page(setup).input.fit.sel $page(setup).input.fito.f $page(setup).input.fito.mv] {
+        if {[winfo exists $e]} { $e state [expr {$S(fit) ? "!disabled" : "disabled"}] }
+    }
     # (a fit turned on whose atoms the molecule has not, "backbone" of a
     # Cα model: on the clustered atoms, said; it was told at Cluster only)
     set m $S(molid)
@@ -1532,7 +1553,13 @@ proc ::VMDance::GUI::_fit_note {} {
             } elseif {[llength $idx] < 3} {
                 set note "Fit: \"$t\" matches [llength $idx] atom[expr {[llength $idx] == 1 ? "" : "s"}] of this molecule; a fit needs 3."; set warn 1
             } else {
-                set note "Fitted on [llength $idx] atoms (on values: VMD's coordinates are not moved)."
+                set ff [string trim $S(fitframe)]
+                set to [expr {$ff eq "" ? "the first clustered frame" : ($ff eq "-1" ? "the last frame" : "frame $ff")}]
+                if {$S(fitmove)} {
+                    set note "Fitted on [llength $idx] atoms, onto $to: Cluster moves VMD's coordinates there (every frame, all atoms)."
+                } else {
+                    set note "Fitted on [llength $idx] atoms, onto $to (on values: VMD's coordinates are not moved)."
+                }
             }
         } else {
             lassign [_frame_range] first last
@@ -2484,9 +2511,13 @@ proc ::VMDance::GUI::input_request {} {
     lassign [_frame_range] first last
     # (what is typed, as typed: expr's ?: would make "010" 8, and fail on
     # "NaN")
-    set fit ""
-    if {$S(fit)} { set fit [string trim $S(fitsel)] }
-    dict create mol $S(molid) sel [string trim $S(sel)] fit $fit \
+    set fit ""; set fitframe ""; set fitmove 0
+    if {$S(fit)} {
+        set fit [string trim $S(fitsel)]
+        set fitframe [string trim $S(fitframe)]
+        set fitmove $S(fitmove)
+    }
+    dict create mol $S(molid) sel [string trim $S(sel)] fit $fit fitframe $fitframe fitmove $fitmove \
         first $first last $last step [string trim $S(step)]
 }
 
@@ -2608,7 +2639,7 @@ proc ::VMDance::GUI::sweep {} {
     } err]} { _error "No sweep:\n$err"; return }
     set n [llength [dict get $req configs]]
     if {$n > 50 && [tk_messageBox -parent $w -type okcancel -icon question -title VMDance \
-            -message "The sweep runs $n clusterings. Go on?" -detail [expr {[_in_library] ?
+            -message "The sweep runs $n clusterings. Go on?" -detail [expr {[_in_library] && [::VMDance::Backend::lib_api] < 2 ?
                 "Each clustering runs in the library, in VMD, which does not respond during one; Cancel stops the sweep between two." :
                 "It runs in the background; Cancel stops it."}]] ne "ok"} return
     _start sweep $req "Sweeping $n configurations" \
@@ -2777,7 +2808,7 @@ proc ::VMDance::GUI::renumber {} {
 # message says which field each is. (The message itself is left as it is.)
 proc ::VMDance::GUI::_fields {msg} {
     set names {
-        -sel "Atoms" -fit "the Fit box" -first "the first of Frames" -last "the last of Frames" -step "Every" -mol "Molecule"
+        -sel "Atoms" -fit "the Fit box" -fitframe "the Fit's frame" -fitmove "Move VMD's coordinates" -first "the first of Frames" -last "the last of Frames" -step "Every" -mol "Molecule"
         -k "Clusters (k)" -metric "Metric" -algorithm "Algorithm"
     }
     # (the algorithms' parameters by their labels in Setup, the algorithm's of now first)
@@ -3113,7 +3144,11 @@ proc ::VMDance::GUI::_sync_setup {} {
     refresh_molecules
     set S(sel) [dict get $q sel]
     set S(fit) [expr {[dict get $q fit] ne ""}]
-    if {$S(fit)} { set S(fitsel) [dict get $q fit] }
+    if {$S(fit)} {
+        set S(fitsel) [dict get $q fit]
+        set S(fitframe) [::VMDance::_get $q fitframe ""]
+        set S(fitmove) [::VMDance::_get $q fitmove 0]
+    }
     set S(step) [dict get $q step]
     # (a run of every frame is "All frames", its last written -1 or as the
     # number a scan's or a session's record holds: a range left in Setup
@@ -3148,7 +3183,7 @@ proc ::VMDance::GUI::_setup_state {} {
     variable S
     set out {}
     foreach k [lsort [array names S]] {
-        if {$k in {molid sel fit fitsel framemode first last step algorithm metric} || [regexp {^[kp]_} $k]} { lappend out $k $S($k) }
+        if {$k in {molid sel fit fitsel fitframe fitmove framemode first last step algorithm metric} || [regexp {^[kp]_} $k]} { lappend out $k $S($k) }
     }
     return $out
 }
@@ -3306,7 +3341,7 @@ proc ::VMDance::GUI::_summary {} {
     set q [dict get $a request]
     set nf [llength [dict get $a frames]]
     set k [dict get $a nclusters]
-    set fit [expr {[dict get $q fit] ne "" ? ", fitted on [dict get $q fit]" : ", not fitted"}]
+    set fit [expr {[dict get $q fit] ne "" ? ", fitted on [dict get $q fit][expr {[::VMDance::_get $q fitframe ""] ne "" ? " to frame [dict get $q fitframe]" : ""}]" : ", not fitted"}]
     set s "[::VMDance::Algo::label [dict get $q algorithm]][expr {[dict get $q k] ne "" ? ", k [dict get $q k]" : ""}] of $nf frames × [dict get $a natoms] atoms$fit: $k cluster[expr {$k == 1 ? "" : "s"}][::VMDance::_empties]"
     set n [::VMDance::Results::noise]
     if {$n} { append s ", $n noise frame[expr {$n == 1 ? "" : "s"}]" }
@@ -3962,7 +3997,7 @@ proc ::VMDance::GUI::help {} {
         h "First\n"
         {} "Load a trajectory in VMD (a structure, then its frames). The molecule appears in Setup with its atoms and frames.\n"
         h "Cluster\n"
-        {} "Setup: the molecule, the atoms (the same in every frame; Cα atoms by default), the frames and every n-th; optionally a fit to the first frame — the note under it says whether the frames look superposed already. Choose the algorithm and its parameters, and press Cluster. The clustering runs in the background; Cancel stops it and keeps what was there (with the library, VMD waits until each clustering ends, and Cancel acts then). Every clustering is kept as a run (Results ▸ Run).\n"
+        {} "Setup: the molecule, the atoms (the same in every frame; Cα atoms by default), the frames and every n-th; optionally a fit, onto the first clustered frame or another, on the values or moving VMD's coordinates — the note under it says whether the frames look superposed already. Choose the algorithm and its parameters, and press Cluster. The clustering runs in the background; Cancel stops it and keeps what was there (with CPP-MDANCE's library before its v2, VMD waits until each clustering ends, and Cancel acts then). Every clustering is kept as a run (Results ▸ Run).\n"
         h "Explore\n"
         {} "Results: the table of clusters (frames, share, the mean square deviation within, from the representative, the representative's frame); click a heading to sort. Selecting clusters there or in a plot shows them on top everywhere, and the 3D tab can overlay their frames. Double-click a cluster to go to its representative.\n"
         h "Plots\n"

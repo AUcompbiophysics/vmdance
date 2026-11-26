@@ -27,8 +27,9 @@ VMD's 3D window.
    :alt: The VMDance window: the table of clusters, the groups, and the Populations plot.
    :width: 100%
 
-   MDANCE's tau peptide (6001 frames; resid 3 to 12 and name CA N C O H),
-   by KMeans NANI at k 3. The trajectory's two halves are the groups.
+   The tau peptide of the quick-start guide and of :doc:`tutorial` (6001
+   frames; resid 3 to 12 and name N CA C O H, fitted onto frame 999), by
+   KMeans NANI at k 6. The trajectory's two halves are the groups.
 
 .. figure:: _static/diagrams/workflow.svg
    :alt: Load, choose, scan, cluster, explore, keep.
@@ -42,8 +43,9 @@ VMD's 3D window.
      - A molecule's frames (all, a range, every n-th), by the coordinates of
        the same atoms. With KMeans NANI, DIVINE, HELM (from a first NANI
        clustering or a label file) or eQual (clusters within a radius, and
-       noise). Optionally fitted to the first frame, without moving VMD's
-       coordinates. A warning when the frames do not look superposed.
+       noise). Optionally fitted onto the first frame or any other, on the
+       values or moving VMD's coordinates. A warning when the frames do
+       not look superposed.
    * - **Choose k**
      - An elbow scan of the Calinski–Harabasz and Davies–Bouldin scores,
        ringed where they point. Davies–Bouldin's lowest value and sharpest
@@ -68,10 +70,10 @@ VMD's 3D window.
      - PRIME's native-like frame, MDANCE's extended similarity (iSIM),
        frames picked without clustering (the most diverse, the outliers …).
    * - **Keep and share it**
-     - Every clustering is kept as a run. Sessions, the MDANCE plugin's
-       too. Tables with a header that says how they were made. The
-       representatives' structures and each cluster's trajectory. Figures
-       at the size and text size of a paper's column or a slide.
+     - Every clustering is kept as a run. Sessions. Tables with a header
+       that says how they were made. The representatives' structures and
+       each cluster's trajectory. Figures at the size and text size of a
+       paper's column or a slide.
    * - **Script it**
      - One ``vmdance`` command that does all the window does, in text-mode
        VMD too.

@@ -74,10 +74,16 @@ selection's order (3 × atoms numbers). The same atoms are read at every
 frame.
 
 MDANCE expects an aligned trajectory, and the rows are clustered as they
-are. The exception is *Fit to the first frame* (``-fit selection``): it
-first superposes each frame on the first clustered one, by those atoms.
-The fit is computed on the values, and VMD's own coordinates never move.
-The fit is off unless asked.
+are. The exception is the fit (*Fit on*, ``-fit selection``): it first
+superposes each frame on a reference frame, by those atoms. The reference
+is the first clustered frame unless another is given (*to frame*,
+``-fitframe f``: any frame of the molecule, clustered or not, -1 its
+last). By default the fit is computed on the values, and VMD's own
+coordinates do not move. *Move VMD's coordinates* (``-fitmove 1``) moves
+them first: every frame of the molecule, all of its atoms, onto the
+reference, as an alignment in VMD would; reload the trajectory to undo
+it. Both cluster the same rows. A frame already superposed is left as it
+is, so a second clustering moves nothing. The fit is off unless asked.
 
 The plugin computes the fit itself, to the last digit (Horn's quaternion).
 VMD's ``measure fit`` stops after 1000 iterations and prints *Matrix:
@@ -97,7 +103,7 @@ Coordinates that are not numbers (NaN or infinite: a simulation that blew
 up, a damaged file) are refused as they are read. The message names the
 VMD frame and its first such atom. Leave the frame out (``-first``,
 ``-last``, ``-step``) or delete it. (``mdance-cli`` named a row of its
-input, and the library took an infinity and answered.)
+input, and the library before v2 took an infinity and answered.)
 
 The metric
 ----------
@@ -230,10 +236,10 @@ cluster of fewer than 20 frames …"). Then:
 - or ask for fewer clusters (with ``-end-mode points``, a larger share).
 
 With CompSim, a cluster of fewer than 100 / percentage frames crashes
-CPP-MDANCE instead. The program fails that clustering, saying so. The
-library would take VMD with it, so it is refused CompSim below 50% above
-k 2 (k 2 is the first split alone, which the plugin checks). A scan keeps
-such a k or configuration as *not run*.
+CPP-MDANCE instead. The program fails that clustering, saying so, and so
+does the library v2. A library before v2 would take VMD with it, so it is
+refused CompSim below 50% above k 2 (k 2 is the first split alone, which
+the plugin checks). A scan keeps such a k or configuration as *not run*.
 
 The Tree plot of a DIVINE clustering is the average linkage of its
 clusters' mean structures, not its splits: CPP-MDANCE does not return

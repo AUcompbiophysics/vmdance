@@ -36,19 +36,19 @@ clusters, or seed with k-means++.
 
 **Should I fit the frames?** MDANCE clusters coordinates as they are. A
 trajectory aligned on the atoms that matter (the backbone, say) clusters
-shapes. If yours is not aligned, tick *Fit to the first frame*. Otherwise
+shapes. If yours is not aligned, tick *Fit on*. Otherwise
 frames also separate by where the molecule drifted. The fit is off unless
 ticked. A run's summary and name say whether it was fitted.
 
 **Is my trajectory aligned?** Setup says. With the fit off, the note under
-*Fit to the first frame* gives how far a sample of the frames is from the
+*Fit on* gives how far a sample of the frames is from the
 first, as they are and once fitted. It warns, in a red-brown tone, when
 they do not look superposed: when a fit halves that distance and takes an
 ångström off it. ``vmdance alignment`` returns the same numbers. The
 command notes it when it clusters such frames unfitted.
 
 A flexible molecule can be far from its first frame both ways (the tau
-peptide: 4.15 Å as it is, 3.96 Å fitted). That is its motion, and no
+peptide's Cα atoms: 4.09 Å as they are, 3.91 Å fitted). That is its motion, and no
 warning. Frames that were not aligned, clustered as they are, give
 clusters of where the molecule is, not of its shape.
 
@@ -100,8 +100,8 @@ frames.
   number scikit-learn gives with ``metric="sqeuclidean"`` (its default
   metric, ``euclidean``, gives another).
 
-On the tau peptide at k 3 they are 0.25 and 0.27, with 537 frames below
-zero by the second. Say which one you report.
+On the tau peptide at k 6 (:doc:`tutorial`) they are 0.28 and 0.29, with
+573 frames below zero by the second. Say which one you report.
 
 **Has my run converged?** **Results ▸ Groups ▸ Halves** makes the two
 halves of the clustered frames two groups. The Make-up plot shows each
@@ -132,7 +132,11 @@ Four things of the backend differ still:
 - a stratified seed's position on a half (50 frames at 10%: 24.5), which
   CPP-MDANCE rounds away from zero and MDANCE to even;
 - scikit-learn's k-means (MDANCE's) stops at its tolerance, CPP-MDANCE's
-  at convergence;
+  at convergence. With ``-tol 1e-4`` (*Tolerance* in Setup; CPP-MDANCE
+  with ``-tol``), KMeans NANI stops where MDANCE's does, and gives its
+  labels: on the tau peptide, every one of 24 runs (the Cα and the heavy
+  atoms; k 2, 6 and 10; the four seedings that draw nothing), where
+  without it 3 of the Cα runs differ by 2 to 78 frames;
 - CPP-MDANCE leaves an emptied cluster empty, where scikit-learn reseeds
   it;
 - DIVINE, refining a pair anchors' split, seeds a side of two frames with
@@ -140,18 +144,28 @@ Four things of the backend differ still:
 
 The seeds, and the clusters, differ then.
 
-**The library froze VMD.** A library call blocks VMD until it returns, and
-cannot be cancelled: Cancel acts when it ends. For long trajectories,
-choose the program in Settings. The line at the bottom says so through the
-call. Setup says when *Automatic* took the library, having found no
-program.
+**The library froze VMD.** That is a library before CPP-MDANCE's v2: its
+call blocks VMD until it returns, and cannot be cancelled. Cancel acts
+when it ends, and the line at the bottom says so through the call. The
+library v2 clusters on a thread of its own: VMD stays usable, and Cancel
+stops it (:doc:`install`). Update CPP-MDANCE, or choose the program in
+Settings. Setup says which library clusters, and when *Automatic* took the
+library, having found no program.
+
+**The program or the library: which is faster?** The library v2. On the
+quick-start guide's example and a 4-core PC, it took 1.5 to 1.8 times less
+than the program for a clustering of 50 atoms, and 15 times less for an
+elbow scan, whose values of k it makes at once on the cores
+(:doc:`install`). Both give the same clusters. A library before v2 was no
+faster than the program.
 
 **"the library would need about … GB more in VMD"**, or **"cannot take …
 frames × … atoms"** — the library is given the coordinates in VMD's own
-memory, about 180 bytes a coordinate at its peak. Tcl ends VMD when their
-text passes 2 GB. Use the program (it takes neither), or fewer atoms or
-frames. In *Automatic*, the library is used only when no program was
-found: set ``MDANCE_CLI``.
+memory. A library before v2 takes about 180 bytes a coordinate at its
+peak, and Tcl ends VMD when their text passes 2 GB. The library v2 takes
+about 40, and makes no text. Use the program (it takes neither), or fewer
+atoms or frames. In *Automatic*, the library is used only when no program
+was found: set ``MDANCE_CLI``.
 
 **"frame 5 of molecule 0 has coordinates that are not numbers"** — that
 frame holds NaN or an infinity: a simulation that blew up, a file damaged
@@ -186,14 +200,6 @@ the clustered frames (before the first, after the last).
 **My representations changed colour.** They did not: the plugin draws with
 representations of its own. **3D ▸ Write the clusters to the user field**
 is the one thing that changes the molecule's data, and only when asked.
-
-**Can I open a session of the MDANCE plugin?** **File ▸ Import a session of
-the MDANCE plugin**, with its molecule loaded. Frames added after the
-clustered ones are fine. The molecule whose coordinates give the file's
-cluster MSDs is taken, and the status names it. When none does (a
-trajectory aligned in VMD before it was clustered, a molecule renamed),
-the window offers the molecule chosen in Setup. The command takes it with
-``vmdance session import file.mdance -mol id``.
 
 **A session says a molecule "does not have the clustered frames".** The
 molecule it was put on is not the trajectory that was clustered. It can be
