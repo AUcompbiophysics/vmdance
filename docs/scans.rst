@@ -26,8 +26,16 @@ A scan clusters the same frames many times, and keeps every clustering:
 - its labels, to make it the clustering later (measured then).
 
 The coordinates are read once for the whole scan. HELM's scores with a
-trim read them twice more, every k's together. The library is given one
-list of them for every clustering, made once.
+trim read them twice more, every k's together. The library is given them
+once for every clustering of the scan: as one dataset (its v2), or as one
+list.
+
+With the library v2, an elbow scan's values of k are made at once, on the
+machine's cores: several times sooner than one value at a time
+(:doc:`install`). A scan with the stability is not, whose other seedings
+are called at each k, nor are eQual's radii. A scan of more
+than 24 values is made 16 at a time from the smallest, so that a Cancel
+keeps the low ones.
 
 A value that its parameters cannot take is kept as *not run*, with the
 reason, and the scan goes on. Such values are:
@@ -35,8 +43,8 @@ reason, and the scan goes on. Such values are:
 - NANI's seeds at a larger k;
 - HELM's starting clusters, counted after its first clustering, and its
   trim (``-trim-val``'s, once HELM has run);
-- with the library, DIVINE seeded by CompSim below 50% above k 2, which
-  would take VMD with it.
+- with a library before v2, DIVINE seeded by CompSim below 50% above k 2,
+  which would take VMD with it.
 
 A scan where none can run is refused, and the one there was is kept.
 
@@ -176,5 +184,5 @@ scores, the first wins. ``vmdance sweep best db`` names it.
 clustering.
 
 In the window, more than 50 configurations are confirmed first. Cancel
-stops the sweep between clusterings or during one. With the library, VMD
-waits for each, and Cancel acts when it ends.
+stops the sweep between clusterings or during one. With a library before
+v2, VMD waits for each, and Cancel acts when it ends.

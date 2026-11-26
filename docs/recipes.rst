@@ -186,4 +186,5 @@ The plugin runs CPP-MDANCE's program or its library:
    vmdance backend -mode cli -cli /path/to/mdance-cli
    vmdance backend -mode library -library /path/to/mdance_tcl.so
 
-Both give the same clusters (the reference tests compare them).
+Both give the same clusters (the reference tests compare them). The
+library v2 is the faster, most of all for scans (:doc:`install`).

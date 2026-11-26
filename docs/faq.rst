@@ -144,18 +144,28 @@ Four things of the backend differ still:
 
 The seeds, and the clusters, differ then.
 
-**The library froze VMD.** A library call blocks VMD until it returns, and
-cannot be cancelled: Cancel acts when it ends. For long trajectories,
-choose the program in Settings. The line at the bottom says so through the
-call. Setup says when *Automatic* took the library, having found no
-program.
+**The library froze VMD.** That is a library before CPP-MDANCE's v2: its
+call blocks VMD until it returns, and cannot be cancelled. Cancel acts
+when it ends, and the line at the bottom says so through the call. The
+library v2 clusters on a thread of its own: VMD stays usable, and Cancel
+stops it (:doc:`install`). Update CPP-MDANCE, or choose the program in
+Settings. Setup says which library clusters, and when *Automatic* took the
+library, having found no program.
+
+**The program or the library: which is faster?** The library v2. On the
+quick-start guide's example and a 4-core PC, it took 1.5 to 1.8 times less
+than the program for a clustering of 50 atoms, and 15 times less for an
+elbow scan, whose values of k it makes at once on the cores
+(:doc:`install`). Both give the same clusters. A library before v2 was no
+faster than the program.
 
 **"the library would need about … GB more in VMD"**, or **"cannot take …
 frames × … atoms"** — the library is given the coordinates in VMD's own
-memory, about 180 bytes a coordinate at its peak. Tcl ends VMD when their
-text passes 2 GB. Use the program (it takes neither), or fewer atoms or
-frames. In *Automatic*, the library is used only when no program was
-found: set ``MDANCE_CLI``.
+memory. A library before v2 takes about 180 bytes a coordinate at its
+peak, and Tcl ends VMD when their text passes 2 GB. The library v2 takes
+about 40, and makes no text. Use the program (it takes neither), or fewer
+atoms or frames. In *Automatic*, the library is used only when no program
+was found: set ``MDANCE_CLI``.
 
 **"frame 5 of molecule 0 has coordinates that are not numbers"** — that
 frame holds NaN or an infinity: a simulation that blew up, a file damaged

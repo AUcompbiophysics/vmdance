@@ -209,8 +209,9 @@ the backend was built without it. A note under it:
 
 - names the algorithms the backend was built without. The backend is asked
   again as the chooser opens, for a program rebuilt meanwhile.
-- says when the library clusters. VMD then waits for each clustering, and
-  the line at the bottom says so through it.
+- says when the library clusters. Its v2 clusters in the background, and
+  Cancel stops it. With a library before v2, VMD waits for each
+  clustering, and the line at the bottom says so through it.
 - says that *Automatic* took the library, finding no program.
 
 **Parameters**: the chosen algorithm's (:doc:`parameters`). The other

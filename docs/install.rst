@@ -78,9 +78,11 @@ Tried with VMD 2.0 for Windows (a MinGW64 build):
        -DTCL_STUB_LIBRARY=C:/msys64/mingw64/lib/libtclstub86.a ^
        -DTCL_TCLSH=C:/msys64/mingw64/bin/tclsh.exe
 
-  Then copy ``build/capi/libmdance.dll`` and the compiler's
-  ``libstdc++-6.dll``, ``libgcc_s_seh-1.dll`` and ``libwinpthread-1.dll``
-  next to ``build/tcl/mdance_tcl.dll``. VMD then finds them, whatever its
+  The library v2's ``build/tcl/mdance_tcl.dll`` is one file, with
+  CPP-MDANCE and the compiler's runtime inside: there is nothing to copy.
+  For a library before v2, copy ``build/capi/libmdance.dll`` and the
+  compiler's ``libstdc++-6.dll``, ``libgcc_s_seh-1.dll`` and
+  ``libwinpthread-1.dll`` next to it. VMD then finds them, whatever its
   ``PATH``.
 - **Ghostscript** from Artifex's installer (``gs…w64.exe``, at
   github.com/ArtifexSoftware/ghostpdl-downloads). It is not on winget.
@@ -105,7 +107,8 @@ This makes:
 - with ``BUILD_TCL``, the library ``build/tcl/mdance_tcl.so`` (``.dylib``
   on macOS, ``.dll`` on Windows).
 
-The program is enough. The library is optional.
+The program is enough. The library is optional; its v2 is the faster of
+the two (`The program or the library`_).
 
 DIVINE is built when the tree has ``src/cluster/divine.cpp``
 (``BUILD_DIVINE`` is then on). CPP-MDANCE's main has it since its PR #52
@@ -195,12 +198,33 @@ The CSV file is in a folder of the plugin's own, in ``TMPDIR``:
   passed over.
 
 The **library** is loaded into VMD. The coordinates are passed in memory,
-though the CSV file is written all the same. But a call blocks VMD until
-it returns, and cannot be cancelled. The line at the bottom of the window
-says so.
+though the CSV file is written all the same. How it runs then depends on
+its interface. ``::mdance::info`` in VMD's console answers ``api 2`` for
+CPP-MDANCE's library v2 (its pull request #62); a library before it has no
+such command. Setup says which one clusters.
 
-The library is given the coordinates as one Tcl list, the same for every
-call of a job (a scan's). CPP-MDANCE's Tcl binding makes a text of it:
+**The library v2** holds a job's coordinates as one dataset, 8 bytes a
+coordinate, and runs each call on a thread of its own:
+
+- VMD stays usable, the line at the bottom says how far the call is, and
+  Cancel stops it within a fraction of a second, as with the program;
+- an elbow scan's values of k are made at once, on the machine's cores
+  (:doc:`scans`);
+- a call takes about 40 bytes of VMD's memory a coordinate at its peak,
+  and the dataset is freed when the job ends.
+
+It is faster than the program, which is started anew for every clustering
+and reads the coordinates' file again. On the quick-start guide's example
+(the tau peptide's 6001 frames, on a 4-core PC), KMeans NANI on 50 atoms
+took 1.9 s with the library v2 and 3.2 s with the program, and an elbow
+scan of k 2 to 12 took 1.3 s and 19 s. On all 217 atoms they took 7.6 s
+and 12.4 s, 8.6 s and 89 s. Both gave the same clusters in every job. The
+guide's section *The program or the library* has the whole table.
+
+**A library before v2** is given the coordinates as one Tcl list, the same
+for every call of a job (a scan's). A call blocks VMD until it returns, and
+cannot be cancelled: the line at the bottom of the window says so. It is no
+faster than the program. CPP-MDANCE's Tcl binding makes a text of the list:
 
 - A call takes about 180 bytes of VMD's memory a coordinate at its peak.
   Of these, Tcl keeps 120 until VMD quits.
@@ -211,7 +235,9 @@ A library call that cannot fit is refused, saying so.
 
 The default, *The program if found, else the library*, uses the program
 when there is one, else the library (Setup then says so). Both give the
-same clusters: the tests compare them. For many frames of many atoms, use
-the program.
+same clusters: the tests compare them. To use the library v2 where there
+is a program too, choose it in Settings ▸ Backend, or with ``vmdance
+backend -mode library -library …``. With a library before v2, use the
+program for many frames of many atoms.
 
 Figures in PDF and PNG use Ghostscript (``gs``). EPS works without it.

@@ -103,7 +103,7 @@ Coordinates that are not numbers (NaN or infinite: a simulation that blew
 up, a damaged file) are refused as they are read. The message names the
 VMD frame and its first such atom. Leave the frame out (``-first``,
 ``-last``, ``-step``) or delete it. (``mdance-cli`` named a row of its
-input, and the library took an infinity and answered.)
+input, and the library before v2 took an infinity and answered.)
 
 The metric
 ----------
@@ -236,10 +236,10 @@ cluster of fewer than 20 frames …"). Then:
 - or ask for fewer clusters (with ``-end-mode points``, a larger share).
 
 With CompSim, a cluster of fewer than 100 / percentage frames crashes
-CPP-MDANCE instead. The program fails that clustering, saying so. The
-library would take VMD with it, so it is refused CompSim below 50% above
-k 2 (k 2 is the first split alone, which the plugin checks). A scan keeps
-such a k or configuration as *not run*.
+CPP-MDANCE instead. The program fails that clustering, saying so, and so
+does the library v2. A library before v2 would take VMD with it, so it is
+refused CompSim below 50% above k 2 (k 2 is the first split alone, which
+the plugin checks). A scan keeps such a k or configuration as *not run*.
 
 The Tree plot of a DIVINE clustering is the average linkage of its
 clusters' mean structures, not its splits: CPP-MDANCE does not return
