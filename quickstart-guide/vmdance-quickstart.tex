@@ -225,9 +225,11 @@ the first \cmd{cmake} line. The build then downloads Eigen 3.4.0 for itself.
 
 \textbf{The library} (optional). \cmd{-DBUILD\_TCL=ON} also makes
 \file{build/tcl/mdance_tcl.so} (\cmd{.dylib} on macOS, \cmd{.dll} on
-Windows), which VMD loads. A call then blocks VMD until it returns, and cannot
-be cancelled, and it is not faster (Section~\ref{sec:bench}). Homebrew's \cmd{tcl-tk} is Tcl~9: on macOS, give CMake its Tcl
-8.6.
+Windows), which VMD loads. With CPP-MDANCE's library v2 (its pull request
+\#62) it runs in the background as the program does, and is faster, most of
+all for scans (Section~\ref{sec:bench}); before it, a call blocked VMD until
+it returned. Choose it in \ui{Settings}\then\ui{Backend}. Homebrew's
+\cmd{tcl-tk} is Tcl~9: on macOS, give CMake its Tcl 8.6.
 
 \begin{lstlisting}[style=sh]
 T=$(brew --prefix tcl-tk@8)
@@ -884,26 +886,34 @@ run:
 \begin{itemize}
   \item The program runs in the background: VMD stays usable, and \ui{Cancel}
     stops it. The coordinates go to it as a CSV file, and its answer comes
-    back as JSON.
-  \item The library runs inside VMD: VMD waits until it returns, and it cannot
-    be cancelled. The coordinates go to it as one Tcl list, and the CSV file
-    is written all the same.
+    back as JSON. It is started anew for every clustering, and reads the
+    file again each time.
+  \item The library runs inside VMD. With CPP-MDANCE's library v2 (its pull
+    request \#62), it holds the job's coordinates as one dataset, 8 bytes a
+    number, and runs each call on a thread of its own: VMD stays usable, the
+    job says how far it is, and \ui{Cancel} stops it, as with the program.
+    It makes an elbow scan's values of k at once, on the machine's cores.
+  \item The library before v2 was given the coordinates as one Tcl list. A
+    call blocked VMD until it returned and could not be cancelled, and it
+    was no faster than the program. Setup says which is loaded: \emph{The
+    library clusters, in VMD, in the background}, or \emph{\ldots which does
+    not respond during a clustering}.
 \end{itemize}
 
-Table~\ref{tab:bench} times the two on this guide's trajectory (\bnFrames\
-frames, fitted on frame \bnFitFrame), on its \bnAtomsBackbone\ backbone atoms
-and on all \bnAtomsAll\ of its atoms. Each job is timed whole, as you wait
-for it: the coordinates written, CPP-MDANCE, its answer read, and the
-plugin's own measures of the clusters. The time is the median of \bnReps\
-runs, after one not counted.
+Table~\ref{tab:bench} times the program and the library v2 on this guide's
+trajectory (\bnFrames\ frames, fitted on frame \bnFitFrame), on its
+\bnAtomsBackbone\ backbone atoms and on all \bnAtomsAll\ of its atoms. Each
+job is timed whole, as you wait for it: the coordinates written, CPP-MDANCE,
+its answer read, and the plugin's own measures of the clusters. The time is
+the median of \bnReps\ runs, after one not counted.
 
 \begin{table}[H]
 \centering
 \small
-\caption{The program against the library: seconds a job (\bnMachine, VMD
-  \bnVMD, CPP-MDANCE \bnBackendCommit; \cmd{make bench} in the guide's
-  folder). The last column is the program's time over the library's: below
-  1, the program is the faster.}
+\caption{The program against the library v2: seconds a job (\bnMachine,
+  \bnCores\ cores, VMD \bnVMD, CPP-MDANCE \bnBackendCommit; \cmd{make bench}
+  in the guide's folder). The last column is the program's time over the
+  library's: above 1, the library is the faster.}
 \label{tab:bench}
 \begin{tabular}{@{}lrrrr@{}}
 \toprule
@@ -917,24 +927,36 @@ Job & Atoms & Program (s) & Library (s) & Program / library \\
 \textbf{The same clusters.} All \bnCompared\ jobs gave the same answers in
 both modes: the same labels and, for the scans, the same sizes and scores.
 
-\textbf{The library is not faster.} A single clustering took longer with it:
-\bnKmeansLib\ s against \bnKmeansCli\ s for KMeans NANI on the backbone,
-\bnKmeansAllLib\ s against \bnKmeansAllCli\ s on every atom. The library is
-given the coordinates as one Tcl list, which CPP-MDANCE's Tcl binding turns
-into text, and the CSV file is written all the same. The program reads that
-file instead, and starts in a moment. Only the scans, which call CPP-MDANCE
-again and again with the same list, gain a little from the library: the scan
-with stability, 55 clusterings, took \bnStabilityLib\ s against
-\bnStabilityCli\ s. Over all the jobs, the program took \bnGainMin\ to
-\bnGainMax\ times the library's time.
+\textbf{The library is faster.} A single clustering took \bnKmeansLib\ s
+with it against \bnKmeansCli\ s with the program for KMeans NANI on the
+backbone, and \bnKmeansAllLib\ s against \bnKmeansAllCli\ s on every atom.
+The program is started for each clustering and reads the coordinates' file
+again; the library holds them already.
 
-\textbf{The library costs memory.} Over its runs, VMD grew by \bnMemLib\ MB,
-against \bnMemCli\ MB over the program's: Tcl keeps the text of the
-coordinates' list, about 120 bytes a coordinate, until VMD quits.
+The scans gain most. The library makes an elbow scan's values of k at once,
+on \bnCores\ cores here, where the program is run once a k: \bnElbowLib\ s
+against \bnElbowCli\ s on the backbone, \bnElbowAllLib\ s against
+\bnElbowAllCli\ s on every atom. The scan with stability, 55 clusterings,
+calls the other seedings one after another in both modes: \bnStabilityLib\ s
+against \bnStabilityCli\ s. Over all the jobs, the program took \bnGainMin\
+to \bnGainMax\ times the library's time.
 
-So use the program: it is as fast, it leaves VMD usable and the job stoppable,
-and VMD's memory hardly grows with it. The library is an option where no program
-can be run beside VMD.
+These are one machine's times, a small \bnCores-core one. On another the
+ratios will differ, and the scans' with its cores. A job's \bnReps\ runs
+were apart by at most \bnSpreadLib\% of their median with the library, and
+by \bnSpreadCli\% with the program (one run of KMeans NANI on every atom
+took nearly twice the others): the table gives medians.
+
+\textbf{Neither costs memory.} Over its runs, VMD grew by \bnMemLib\ MB with
+the library and by \bnMemCli\ MB with the program. The library frees its
+dataset when the job ends.
+
+So, with the library v2, use the library where you have built it: it is
+faster, most of all for scans, and it leaves VMD usable and the job
+stoppable, as the program does. The program is enough for everything, and
+needs no Tcl to build. \ui{Settings}\then\ui{Backend} chooses between them:
+\ui{Automatic} takes the program when there is one. With a library older
+than v2, use the program.
 
 % ---------------------------------------------------------------------------
 \section{The command at a glance}

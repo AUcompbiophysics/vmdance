@@ -57,10 +57,10 @@ make bench   VMD=/path/to/vmd TAU_DATA=/path/to/BitQT/examples   # bench.tex wri
 ```
 
 `make bench` also needs CPP-MDANCE's library (`MDANCE_LIB`, or a build with
-`-DBUILD_TCL=ON` beside the repository). It takes about ten minutes, and its
-times are the machine's: run it on a machine otherwise idle. `make check`
-does not compare them. With the library, VMD's memory grows by about a
-gigabyte during it.
+`-DBUILD_TCL=ON` beside the repository): its v2, which the guide's section
+describes. It took 23 minutes on the 4-core
+PC of the table, and its times are the machine's: run it on a machine
+otherwise idle. `make check` does not compare them.
 
 `MDANCE_CLI` names the program; by default it is the CPP-MDANCE build beside
 the repository (`../CPP-MDANCE/build/cli/mdance-cli`). VMD runs with an empty
