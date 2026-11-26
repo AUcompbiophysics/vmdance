@@ -130,7 +130,7 @@ gives a range in ten values, ``from`` the 2% value ``to`` the 50% one
    vmdance help ?subcommand?   ;# the subcommands, or one's usage
    vmdance info            ;# run molid sel fit frames first last step natoms algorithm k metric
                               ;# params nclusters sizes noise ch db selected backend seconds
-                              ;# unrecorded (an import's: metric params, when its file has none)
+                              ;# unrecorded (what a run's file did not record of metric and params: empty for a clustering made here)
    vmdance algorithms      ;# name {label about k available} ...
    vmdance parameters helm ;# -name {type default limits label tip} ... (also prime, similarity, pick)
    vmdance backend         ;# mode cli library loaded using {kind path} algorithms error note
@@ -468,7 +468,6 @@ Files
    vmdance export dir ?-prefix vmdance? ?-items {...}? ?-top 10? ?-lag 1? ?-format dcd|pdb? ?-sel all?
    vmdance session save file.vmdance
    vmdance session load file.vmdance ?-mol auto|load|none|id?
-   vmdance session import file.mdance ?-mol auto|id? ?-label text?
    vmdance figures dir ?-plots {...}? ?-formats {pdf png}? ?-size column|two-columns|slide|screen? \
        ?-width 85mm? ?-height 60mm? ?-text 8? ?-dpi 300? ?-prefix vmdance? ?-cursor 0|1? \
        ?-options {setting value ...}? ?-3d 0|1? ?-renderer auto?

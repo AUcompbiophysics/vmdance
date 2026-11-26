@@ -201,14 +201,6 @@ the clustered frames (before the first, after the last).
 representations of its own. **3D ▸ Write the clusters to the user field**
 is the one thing that changes the molecule's data, and only when asked.
 
-**Can I open a session of the MDANCE plugin?** **File ▸ Import a session of
-the MDANCE plugin**, with its molecule loaded. Frames added after the
-clustered ones are fine. The molecule whose coordinates give the file's
-cluster MSDs is taken, and the status names it. When none does (a
-trajectory aligned in VMD before it was clustered, a molecule renamed),
-the window offers the molecule chosen in Setup. The command takes it with
-``vmdance session import file.mdance -mol id``.
-
 **A session says a molecule "does not have the clustered frames".** The
 molecule it was put on is not the trajectory that was clustered. It can be
 another molecule of the same file names (a replica's folder), files

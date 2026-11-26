@@ -427,7 +427,7 @@ Where each part of the plugin, its tests and its documentation is::
                           the clusters' shares window by window, the groups' divergence, linkage
      lib/analysis.tcl     requests and their checks; the jobs (cluster, elbow, sweep, adopt, import, PRIME, similarity, map, profiles, radii, pick); the backend's output checked
      lib/results.tcl      the clusterings in memory, runs, scans, picks, the selection, queries
-     lib/session.tcl      session files; the MDANCE plugin's, imported
+     lib/session.tcl      session files
      lib/export.tcl       result files: tables, structures
      lib/viz3d.tcl        the 3D drawing: colour by cluster, representatives, overlay, picks
      lib/fonts.tcl        one font family and size
@@ -444,7 +444,7 @@ Where each part of the plugin, its tests and its documentation is::
      common.tcl           shared: paths, the systems, the backends, check
      fake_mdance_cli      a deterministic stand-in for mdance-cli, with hooks for failures
      fake_mdance_cli.bat  runs it with Python on Windows (Tcl runs no script by its #! line there)
-     fixtures/            small multi-model PDBs; sessions of the MDANCE plugin (make_old_sessions.tcl)
+     fixtures/            small multi-model PDBs
      test_core.tcl        the JSON reader, parameters and checks, arguments, label files, a result's checks, runs, sessions as data (tclsh or VMD)
      test_jobs.tcl        the jobs with the fake backend: requests, frames, output checks, failures, Cancel, scans, questions, the coordinates
      test_results.tcl     the command's questions, runs, the 3D drawing, exports and structures

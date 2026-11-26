@@ -70,10 +70,10 @@ VMD's 3D window.
      - PRIME's native-like frame, MDANCE's extended similarity (iSIM),
        frames picked without clustering (the most diverse, the outliers …).
    * - **Keep and share it**
-     - Every clustering is kept as a run. Sessions, the MDANCE plugin's
-       too. Tables with a header that says how they were made. The
-       representatives' structures and each cluster's trajectory. Figures
-       at the size and text size of a paper's column or a slide.
+     - Every clustering is kept as a run. Sessions. Tables with a header
+       that says how they were made. The representatives' structures and
+       each cluster's trajectory. Figures at the size and text size of a
+       paper's column or a slide.
    * - **Script it**
      - One ``vmdance`` command that does all the window does, in text-mode
        VMD too.
