@@ -136,6 +136,18 @@ set after2 [coords_of $m]
 check "and the coordinates are as they were" [same_xyz $after2 $after 1e-9]
 check "a reference frame that is not numbers is refused" [string match "*-fitframe: molecule $m has no frame*" [err {::VMDance::Coords::align $m [dict get $q1 fitatoms] $n}]]
 
+# --- a scan's clustering made a run (elbow load): it says the scan moved them
+set m3 [unaligned]
+set b3 [coords_of $m3]
+vmdance elbow -mol $m3 -sel all -fit all -fitframe 5 -fitmove 1 -ks {2 3} -quiet 1
+set a3 [coords_of $m3]
+check "an elbow scan with -fitmove 1 moves the coordinates" [expr {![same_xyz [list [lindex $a3 7]] [list [lindex $b3 7]]]}]
+vmdance elbow load 2
+set q3 [::VMDance::Results::request]
+check "its clustering, made a run, keeps -fitmove 1 and the frame" [expr {[dict get $q3 fitmove] == 1 && [dict get $q3 fitframe] == 5}]
+check "and made the run without moving them again" [same_xyz [coords_of $m3] $a3 1e-9]
+mol delete $m3
+
 # --- what is written of it
 check "the files' header names the fit's frame and the move" [string match "*fitted on: all, onto frame 5 (VMD's coordinates moved)*" [::VMDance::Export::header]]
 

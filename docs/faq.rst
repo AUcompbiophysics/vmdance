@@ -132,7 +132,11 @@ Four things of the backend differ still:
 - a stratified seed's position on a half (50 frames at 10%: 24.5), which
   CPP-MDANCE rounds away from zero and MDANCE to even;
 - scikit-learn's k-means (MDANCE's) stops at its tolerance, CPP-MDANCE's
-  at convergence;
+  at convergence. With ``-tol 1e-4`` (*Tolerance* in Setup; CPP-MDANCE
+  with ``-tol``), KMeans NANI stops where MDANCE's does, and gives its
+  labels: on the tau peptide, every one of 24 runs (the Cα and the heavy
+  atoms; k 2, 6 and 10; the four seedings that draw nothing), where
+  without it 3 of the Cα runs differ by 2 to 78 frames;
 - CPP-MDANCE leaves an emptied cluster empty, where scikit-learn reseeds
   it;
 - DIVINE, refining a pair anchors' split, seeds a side of two frames with

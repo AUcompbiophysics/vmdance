@@ -81,8 +81,9 @@ MDANCE's part.
     runs call the heptapeptide, and protein G.
   - their elbow screens' labels, but at two kinds of k. Scikit-learn's
     k-means (MDANCE's) stops at its tolerance, where CPP-MDANCE's goes on
-    to convergence (the tau peptide, k 5). And CPP-MDANCE's leaves an
-    emptied cluster empty (protein G from k 12: 1 to 6 empty).
+    to convergence (the tau peptide, k 5): ``-tol 1e-4`` stops it where
+    MDANCE's does. And CPP-MDANCE's leaves an emptied cluster empty
+    (protein G from k 12: 1 to 6 empty).
 
   On the backbone the shares differ by up to 0.009 (CompSim: 0.086). This
   is another choice of atoms, not another program.

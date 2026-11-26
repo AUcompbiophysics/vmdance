@@ -1018,7 +1018,7 @@ proc ::VMDance::Job::_initial {c req} {
     if {[dict get $p initial-labels] ne ""} {
         return [::VMDance::Algo::starting_labels [dict get $p initial-labels] [dict get $c frames]]
     }
-    set first [dict create kinit [dict get $p initial-kinit] percentage [dict get $p initial-percentage]]
+    set first [dict create kinit [dict get $p initial-kinit] percentage [dict get $p initial-percentage] tol 0]
     set r [output [_call $c [list cluster kmeans [dict get $p initial] [dict get $req metric] $first {}] "HELM: the first clustering"] $nf]
     # (numbered 0, 1 … without gaps, as CPP-MDANCE numbers HELM's leaves: a
     # cluster of the first clustering can be empty)
@@ -1461,6 +1461,9 @@ proc ::VMDance::Job::_do_adopt {req} {
     set c [_coords $in 0.0 0.8]
     _same_coords $c $s "the scan"
     set q [dict merge $in [dict filter [dict get $s request] key algorithm metric params]]
+    # (whether the scan moved VMD's coordinates, for the record: they are
+    # not moved again here, _input_of leaves fitmove out)
+    dict set q fitmove [::VMDance::_get [dict get $s request] fitmove 0]
     foreach key {algorithm k metric params} { if {[dict exists $rec $key]} { dict set q $key [dict get $rec $key] } }
     if {[dict exists $rec radius]} { dict set q params threshold [dict get $rec radius]; dict set q k "" }
     _result $c $q [dict get $rec clustering] $t0
