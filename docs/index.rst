@@ -27,8 +27,9 @@ VMD's 3D window.
    :alt: The VMDance window: the table of clusters, the groups, and the Populations plot.
    :width: 100%
 
-   MDANCE's tau peptide (6001 frames; resid 3 to 12 and name CA N C O H),
-   by KMeans NANI at k 3. The trajectory's two halves are the groups.
+   The tau peptide of the quick-start guide and of :doc:`tutorial` (6001
+   frames; resid 3 to 12 and name N CA C O H, fitted onto frame 999), by
+   KMeans NANI at k 6. The trajectory's two halves are the groups.
 
 .. figure:: _static/diagrams/workflow.svg
    :alt: Load, choose, scan, cluster, explore, keep.

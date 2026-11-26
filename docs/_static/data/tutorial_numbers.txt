@@ -1,54 +1,76 @@
 # The numbers of docs/tutorial.rst, made by docs/tools/tutorial_numbers.tcl.
 frames	6001	the frames clustered (the DCD's)
-atoms	50	the atoms of "resid 3 to 12 and name CA N C O H"
-alignment	3.711 3.304 1	the frames from the first: Å as they are, Å fitted, superposed (1) or not
-elbow_seconds	103	the elbow scan with the stability, k 2-12
-elbow_k2	2109 1.652 1.0000	k 2: Calinski-Harabasz, Davies-Bouldin, stability
-explained_k2	26	k 2: % of the variance the clusters explain
-elbow_k3	1525 2.024 0.9836	k 3: Calinski-Harabasz, Davies-Bouldin, stability
-explained_k3	34	k 3: % of the variance the clusters explain
-elbow_k4	1263 2.089 0.8451	k 4: Calinski-Harabasz, Davies-Bouldin, stability
-explained_k4	39	k 4: % of the variance the clusters explain
-elbow_k5	1109 1.972 0.6325	k 5: Calinski-Harabasz, Davies-Bouldin, stability
-explained_k5	43	k 5: % of the variance the clusters explain
-elbow_k6	1006 2.006 0.6702	k 6: Calinski-Harabasz, Davies-Bouldin, stability
-explained_k6	46	k 6: % of the variance the clusters explain
-elbow_k7	916 2.059 0.6727	k 7: Calinski-Harabasz, Davies-Bouldin, stability
-explained_k7	48	k 7: % of the variance the clusters explain
-elbow_k8	840 2.043 0.5900	k 8: Calinski-Harabasz, Davies-Bouldin, stability
-explained_k8	50	k 8: % of the variance the clusters explain
-elbow_k9	781 2.030 0.6348	k 9: Calinski-Harabasz, Davies-Bouldin, stability
-explained_k9	51	k 9: % of the variance the clusters explain
-elbow_k10	744 2.034 0.6505	k 10: Calinski-Harabasz, Davies-Bouldin, stability
-explained_k10	53	k 10: % of the variance the clusters explain
-elbow_k11	695 1.893 0.6698	k 11: Calinski-Harabasz, Davies-Bouldin, stability
-explained_k11	54	k 11: % of the variance the clusters explain
-elbow_k12	675 1.844 0.5718	k 12: Calinski-Harabasz, Davies-Bouldin, stability
-explained_k12	55	k 12: % of the variance the clusters explain
+atoms	50	the atoms of "resid 3 to 12 and name N CA C O H"
+fitframe	999	the frame every frame is fitted onto
+alignment_loaded	3.711 3.304 1	as loaded, the frames from the first: Å as they are, Å fitted, superposed (1) or not
+alignment_loaded_ca	4.091 3.91 1	as loaded, of "name CA": the same
+alignment_loaded_noh	5.469 5.443 1	as loaded, of "noh": the same
+alignment_loaded_all	6.09 6.09 1	as loaded, of "all": the same
+elbow_seconds	95	the elbow scan with the stability, k 2-12
+alignment	3.38 3.304 1	once moved, the frames from the first: Å as they are, Å fitted, superposed (1) or not
+elbow_k2	2403 1.537 1.0000	k 2: Calinski-Harabasz, Davies-Bouldin, stability
+explained_k2	29	k 2: % of the variance the clusters explain
+elbow_k3	1750 1.817 0.8377	k 3: Calinski-Harabasz, Davies-Bouldin, stability
+explained_k3	37	k 3: % of the variance the clusters explain
+elbow_k4	1435 1.986 0.6237	k 4: Calinski-Harabasz, Davies-Bouldin, stability
+explained_k4	42	k 4: % of the variance the clusters explain
+elbow_k5	1298 1.795 0.9715	k 5: Calinski-Harabasz, Davies-Bouldin, stability
+explained_k5	46	k 5: % of the variance the clusters explain
+elbow_k6	1143 1.781 0.7384	k 6: Calinski-Harabasz, Davies-Bouldin, stability
+explained_k6	49	k 6: % of the variance the clusters explain
+elbow_k7	1051 1.945 0.5993	k 7: Calinski-Harabasz, Davies-Bouldin, stability
+explained_k7	51	k 7: % of the variance the clusters explain
+elbow_k8	967 1.928 0.6679	k 8: Calinski-Harabasz, Davies-Bouldin, stability
+explained_k8	53	k 8: % of the variance the clusters explain
+elbow_k9	882 2.090 0.5598	k 9: Calinski-Harabasz, Davies-Bouldin, stability
+explained_k9	54	k 9: % of the variance the clusters explain
+elbow_k10	843 1.994 0.6228	k 10: Calinski-Harabasz, Davies-Bouldin, stability
+explained_k10	56	k 10: % of the variance the clusters explain
+elbow_k11	781 1.950 0.6938	k 11: Calinski-Harabasz, Davies-Bouldin, stability
+explained_k11	57	k 11: % of the variance the clusters explain
+elbow_k12	745 1.920 0.5973	k 12: Calinski-Harabasz, Davies-Bouldin, stability
+explained_k12	58	k 12: % of the variance the clusters explain
 suggest_db_lowest	2	elbow suggest: db_lowest
-suggest_db_dip	5	elbow suggest: db_dip
+suggest_db_dip	8	elbow suggest: db_dip
 suggest_ch_highest	2	elbow suggest: ch_highest
-suggest_stable	2 3	elbow suggest: stable
+suggest_stable	2 5	elbow suggest: stable
 suggest_most_stable	2	elbow suggest: most_stable
-k3_sizes	2412 1508 2081	k 3: the clusters' frames
-k3_silhouette	0.25	k 3: the mean silhouette (from the clusters' mean structures)
-k3_silhouette_pairs	0.27 586	k 3: the mean silhouette from every frame, and the frames below 0
-residence_c0	2.19	cluster 0: its mean stay (frames)
-longest_c0	22	cluster 0: its longest stay (frames)
-residence_c1	1.91	cluster 1: its mean stay (frames)
-longest_c1	12	cluster 1: its longest stay (frames)
-residence_c2	2.17	cluster 2: its mean stay (frames)
-longest_c2	17	cluster 2: its longest stay (frames)
-all_seen_by	30	the frame by which every cluster has been seen
-halves_c0	1123 1289	cluster 0: frames of the first and the second half
-halves_c1	909 599	cluster 1: frames of the first and the second half
-halves_c2	968 1113	cluster 2: frames of the first and the second half
-halves_divergence	0.007 1 0.103	the halves: their divergence, the cluster whose share differs most, by how much
-map_variance	36 13	the map's two axes: % of the variance
-profiles_reference	0	the profiles' reference: the most populated cluster
-helm_merges	57	HELM's merges, from its starting clusters to 3
-helm_largest_step	1.6 57	HELM: the largest step (times the merge before) and the clusters before it
-helm_last_heights	13.6 13.8 13.9 14.5 15.2 15.2 16.3 16.4	the last eight merges' heights (k 11 to 4)
-script_k6	699 1093 1223 1292 721 973 1005.6 2.01	the command page's script: KMeans NANI, k 6, CompSim: sizes, Calinski-Harabasz, Davies-Bouldin
-radii_suggested	3.4 10 0.73 147	vmdance radii: from, to, by, and the frames sampled
-equal_radii	194 55 19 9 7	eQual's clusters at radius 4, 6, 8, 10, 12
+suggest_words	Davies–Bouldin: lowest at k 2, sharpest dip at k 8; Calinski–Harabasz: highest at k 2; seedings agree (0.9 or more) at k 2, 5	elbow suggest: in words (the Scans box)
+k6_sizes	582 1844 693 645 1225 1012	k 6: the clusters' frames
+k6_percent	10 31 12 11 20 17	k 6: their shares (%)
+k6_scores	1142.8 1.78	k 6: Calinski-Harabasz, Davies-Bouldin (the command's answer)
+k6_label	KMeans NANI, k 6 → 6 clusters, fitted to frame 999	k 6: the run's name
+k6_representatives	2629 5982 530 2633 108 5469	k 6: the clusters' representative frames
+k6_silhouette	0.28	k 6: the mean silhouette (from the clusters' mean structures)
+k6_silhouette_pairs	0.29 573	k 6: the mean silhouette from every frame, and the frames below 0
+residence_c0	1.64	cluster 0: its mean stay (frames)
+longest_c0	7	cluster 0: its longest stay (frames)
+residence_c1	2.04	cluster 1: its mean stay (frames)
+longest_c1	14	cluster 1: its longest stay (frames)
+residence_c2	1.50	cluster 2: its mean stay (frames)
+longest_c2	10	cluster 2: its longest stay (frames)
+residence_c3	1.57	cluster 3: its mean stay (frames)
+longest_c3	8	cluster 3: its longest stay (frames)
+residence_c4	1.65	cluster 4: its mean stay (frames)
+longest_c4	8	cluster 4: its longest stay (frames)
+residence_c5	1.64	cluster 5: its mean stay (frames)
+longest_c5	8	cluster 5: its longest stay (frames)
+all_seen_by	100	the frame by which every cluster has been seen
+halves_c0	341 241	cluster 0: frames of the first and the second half
+halves_c1	849 995	cluster 1: frames of the first and the second half
+halves_c2	442 251	cluster 2: frames of the first and the second half
+halves_c3	354 291	cluster 3: frames of the first and the second half
+halves_c4	565 660	cluster 4: frames of the first and the second half
+halves_c5	449 563	cluster 5: frames of the first and the second half
+halves_divergence	0.009 2 0.064	the halves: their divergence, the cluster whose share differs most, by how much
+halves_pair	first second 0.009046 0.06369 2	the halves: the pair as vmdance groups compare gives it
+halves_words	first and second: divergence 0.009 (0: the same shares of the clusters; 0.69: no cluster in common); cluster 2 differs most, 14.7% of first against 8.4% of second	the halves: the line under the Groups box
+map_variance	39 14	the map's two axes: % of the variance
+profiles_reference	1	the profiles' reference: the most populated cluster
+helm_sizes	625 377 1315 1486 492 1706	HELM, k 6 from 60: the clusters' frames
+helm_merges	54	HELM's merges, from its starting clusters to 6
+helm_largest_step	2.2 56	HELM: the largest step (times the merge before) and the clusters before it
+helm_last_heights	9.12 9.14 9.45 9.79 10 10.1 10.4 10.8	the last eight merges' heights (from 14 clusters down to 6)
+radii_suggested	2.4 7.9 0.61 147	vmdance radii: from, to, by, and the frames sampled
+radii_answer	sample 147 pairs 10731 percentiles {2 2.44 5 3.26 10 4.09 25 5.73 50 7.89} from 2.4 to 7.9 by 0.61	vmdance radii: its whole answer
+equal_radii	60 15 7 4 2	eQual's clusters at radius 4, 6, 8, 10, 12

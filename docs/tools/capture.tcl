@@ -1,11 +1,16 @@
 # The documentation's pictures: the window (its panes and all 13 plots) on
-# MDANCE's example, the tau peptide (6001 frames), as the tutorial makes
-# it: KMeans NANI at k 3 (the stable k), the two halves of the trajectory
-# as groups, the map and the profiles; the elbow scan with its stability;
-# HELM's merges' heights; the sweep; the tools; the dialogs; the 3D view;
-# figures; and the places of the window's parts, for docs/tools/annotate.py.
+# the quick-start guide's example and setup, as the tutorial makes it. The
+# tau peptide of BitQT's examples (6001 frames; MDANCE's Python package
+# ships the same files), the backbone of residues 3 to 12, every frame
+# fitted on it onto frame 999 with VMD's coordinates moved, KMeans NANI
+# seeded by CompSim at k 6; the two halves of the trajectory as groups, the
+# map and the profiles; the elbow scan with its stability; HELM's merges'
+# heights; the guide's sweep; the tools; the dialogs and the File menu; the
+# 3D view; figures; and the places of the window's parts, for
+# docs/tools/annotate.py.
 #   cd <VMDance>
-#   MDANCE_DATA=<mdance>/data DISPLAY=:9 vmd -dispdev win -e docs/tools/capture.tcl < <(sleep 900)
+#   TAU_DATA=<BitQT>/examples DISPLAY=:9 vmd -dispdev win -e docs/tools/capture.tcl < <(sleep 900)
+# (MDANCE_DATA, the package's mdance/data folder, names the files too.)
 # (standard input must stay open: VMD draws no new geometry once it has
 # read its end, and the renders would show a stale scene). On Windows the
 # pictures are taken by docs/tools/capture_win.ps1 (PowerShell), the window
@@ -65,7 +70,8 @@ package require vmdance
 ::VMDance::_load_tk
 set ::VMDance::Prefs::file ""
 if {[real_cli] ne ""} { use_cli }
-set data [expr {[info exists ::env(MDANCE_DATA)] ? $::env(MDANCE_DATA) : [file join $::root .. MDANCE src mdance data]}]
+set data [file join $::root .. MDANCE src mdance data]
+foreach v {MDANCE_DATA TAU_DATA} { if {[info exists ::env($v)] && $::env($v) ne ""} { set data $::env($v) } }
 set m [mol new [file join $data aligned_tau.pdb] waitfor all]
 mol addfile [file join $data aligned_original_tau_6K.dcd] waitfor all molid $m
 animate delete beg 0 end 0 $m
@@ -81,18 +87,25 @@ wm geometry .vmdance +0+0
 settle 1500
 set ${S}(molid) $m
 ${G}::refresh_molecules
-# (the atoms MDANCE's tutorial clusters, as the tutorial does)
-set ${S}(sel) "resid 3 to 12 and name CA N C O H"
+# (the guide's atoms, fit and k: quickstart-guide/quickstart.tcl)
+set sel "resid 3 to 12 and name N CA C O H"
+set ${S}(sel) $sel
+set ${S}(fit) 1
+set ${S}(fitsel) $sel
+set ${S}(fitframe) 999
+set ${S}(fitmove) 1
+${G}::_fit_changed
 set ${S}(algorithm) kmeans
 ${G}::_algorithm_changed
-set ${S}(k_kmeans) 3
+set ${S}(k_kmeans) 6
 set ${S}(p_kmeans_kinit) CompSim
+${G}::_params_sync
 ${G}::_count
 ${G}::show_pane setup
 shot setup
 ${G}::cluster
 wait_idle
-set run3 [dict get [vmdance info] run]
+set runk [dict get [vmdance info] run]
 # the groups (the two halves: does each visit the same clusters?), the map
 # and the profiles, from the Results page
 set ${S}(gp_ranges) "first 0-2999 second 3000-6000"
@@ -138,7 +151,7 @@ set c $w.pw.right.nb.elbow.c
 lassign [::VMDance::Plot::area $c] x0 y0 x1 y1
 # (drawn by Tk before the picture: idle tasks only, so that no redraw
 # wipes the panel)
-${G}::_hover elbow $c [::VMDance::Plot::X $c 3] [expr {($y0 + $y1) / 2}]
+${G}::_hover elbow $c [::VMDance::Plot::X $c 6] [expr {($y0 + $y1) / 2}]
 update idletasks
 grab .vmdance [file join $::figs plot_elbow.png]
 log "wrote plot_elbow.png ([llength [$c find withtag partition]] items of the panel)"
@@ -146,7 +159,7 @@ set ${S}(eb_stab) 0
 # HELM from 60 starting clusters, and its merges' heights
 set ${S}(algorithm) helm
 ${G}::_algorithm_changed
-set ${S}(k_helm) 3
+set ${S}(k_helm) 6
 set ${S}(p_helm_initial) 60
 ${G}::_params_sync
 ${G}::cluster
@@ -158,19 +171,19 @@ shot plot_tree_heights
 set ${S}(td_view) tree
 set ${S}(algorithm) kmeans
 ${G}::_algorithm_changed
-# the sweep
-foreach a {kmeans divine helm} { set ${S}(gr_alg_$a) [expr {$a eq "kmeans"}] }
-foreach k $::VMDance::Algo::kinits { set ${S}(gr_seed_$k) [expr {$k in {StratAll StratReduced CompSim}}] }
-set ${S}(gr_from) 3
-set ${S}(gr_to) 10
+# the sweep (the guide's: three algorithms, two seedings, k 2 to 8)
+foreach a {kmeans divine helm} { set ${S}(gr_alg_$a) 1 }
+foreach k $::VMDance::Algo::kinits { set ${S}(gr_seed_$k) [expr {$k in {StratAll CompSim}}] }
+set ${S}(gr_from) 2
+set ${S}(gr_to) 8
 ${G}::_grid_count
 ${G}::sweep
 wait_idle
 ${G}::show_tab sweep
 ${G}::show_pane scans
 shot plot_sweep
-# the run of k 3 again, and its questions
-vmdance run $run3
+# the run of k 6 again, and its questions
+vmdance run $runk
 ${G}::prime
 wait_idle
 ${G}::similarity
@@ -199,6 +212,25 @@ ${G}::export_dialog
 update
 shot dialog_export $w.export
 destroy $w.export
+# the File menu, open on Quick export (Windows): opened here as a popup
+# under the menubar (tk_popup waits until it closes); capture_menu.ps1, in
+# the background meanwhile, walks it to Quick export by messages to VMD's
+# own menu windows, takes its picture, and closes it
+if {$::tcl_platform(platform) eq "windows"} {
+    set mf [file join $::figs menu_file.png]
+    file delete $mf
+    wm attributes .vmdance -topmost 1
+    raise .vmdance
+    settle 500
+    exec powershell -NoProfile -ExecutionPolicy Bypass -File [file nativename [file join $::root docs tools capture_menu.ps1]] \
+        [pid] [wm frame .vmdance] [file nativename $mf] 7 &
+    tk_popup $w.menu.file [winfo rootx .vmdance] [winfo rooty .vmdance]
+    set end [expr {[clock seconds] + 15}]
+    while {![file exists $mf] && [clock seconds] < $end} { settle 200 }
+    settle 1000
+    wm attributes .vmdance -topmost 0
+    log "menu_file.png: [file exists $mf]"
+}
 ${G}::settings_dialog
 update
 set ::VMDance::GUI::E(cli) /opt/CPP-MDANCE/build/cli/mdance-cli

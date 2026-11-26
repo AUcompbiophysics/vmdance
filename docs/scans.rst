@@ -92,9 +92,10 @@ point to. A line of words above it, the Scans box and
 most_stable``. Each is a k, or a radius of an eQual scan, and empty where
 the scan does not say.
 
-The readings need not agree, and the plugin does not choose. On MDANCE's
-tau peptide, Davies–Bouldin is lowest at k 2 and dips most at k 6, and the
-seedings agree only at k 2 and 3 (:doc:`tutorial` says what each means).
+The readings need not agree, and the plugin does not choose. On the tau
+peptide, Davies–Bouldin is lowest at k 2 and dips most at k 8 (as sharply,
+to the third decimal, at k 6), and the seedings agree only at k 2 and 5
+(:doc:`tutorial` says what each means).
 
 A third curve, *Scores ▸ Variance explained* in the Elbow plot, is the
 share of the frames' variance that the clusters explain. It comes from the

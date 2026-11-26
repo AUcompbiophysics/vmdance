@@ -48,7 +48,7 @@ they do not look superposed: when a fit halves that distance and takes an
 command notes it when it clusters such frames unfitted.
 
 A flexible molecule can be far from its first frame both ways (the tau
-peptide: 4.15 Å as it is, 3.96 Å fitted). That is its motion, and no
+peptide's Cα atoms: 4.09 Å as they are, 3.91 Å fitted). That is its motion, and no
 warning. Frames that were not aligned, clustered as they are, give
 clusters of where the molecule is, not of its shape.
 
@@ -100,8 +100,8 @@ frames.
   number scikit-learn gives with ``metric="sqeuclidean"`` (its default
   metric, ``euclidean``, gives another).
 
-On the tau peptide at k 3 they are 0.25 and 0.27, with 537 frames below
-zero by the second. Say which one you report.
+On the tau peptide at k 6 (:doc:`tutorial`) they are 0.28 and 0.29, with
+573 frames below zero by the second. Say which one you report.
 
 **Has my run converged?** **Results ▸ Groups ▸ Halves** makes the two
 halves of the clustered frames two groups. The Make-up plot shows each

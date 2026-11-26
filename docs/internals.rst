@@ -481,9 +481,11 @@ Where each part of the plugin, its tests and its documentation is::
      _static/figures/     the screenshots; _static/diagrams/: the diagrams (SVG and PNG)
      diagrams/            the flows' Graphviz sources
      _static/data/        the tutorial's numbers (tutorial_numbers.txt)
+     _static/icons/       the window's icons drawn large (tools/icons.py, from vmdance/icons/make_icons.py): the pages' and the quick-start guide's
      tools/make_logo.py   makes the logo's dark copies, its mark, the PNGs and the window's icon, from the design's SVGs
-     tools/capture.tcl    takes the screenshots (MDANCE's tau peptide); annotate.py numbers the window's parts
+     tools/capture.tcl    takes the screenshots (the tau peptide, the quick-start guide's setup); annotate.py numbers the window's parts
      tools/capture_win.ps1  a window's picture on Windows, for capture.tcl
+     tools/capture_menu.ps1  the File menu's picture, open on Quick export (Windows), for capture.tcl and the guide's figures.tcl
      tools/make_diagrams.py  draws the diagrams (matplotlib, and dot for the flows)
      tools/tutorial_numbers.tcl  the tutorial's numbers; gen_parameters.tcl: the parameters page
    TESTING.md             what to check by hand

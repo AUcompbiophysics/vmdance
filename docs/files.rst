@@ -328,12 +328,12 @@ In a PDB the frames are models: ``MODEL n`` … ``ENDMDL`` around each, a
 
 .. code-block:: text
 
-   REMARK     VMDance: cluster 0's representative, frame 4646 (2412 frames)
+   REMARK     VMDance: cluster 0's representative, frame 2629 (582 frames)
    MODEL        1
    CRYST1 …
    ATOM      1  N   …
    ENDMDL
-   REMARK     VMDance: cluster 1's representative, frame 4134 (1508 frames)
+   REMARK     VMDance: cluster 1's representative, frame 5982 (1844 frames)
    MODEL        2
    …
    ENDMDL
@@ -360,6 +360,10 @@ is refused too, in either format: leave those atoms out.
 - the table of clusters or the data of the plot shown (CSV);
 - the plot shown (PDF, PNG or EPS);
 - or the 3D view (PNG).
+
+.. image:: _static/figures/menu_file.png
+   :alt: The File menu, open on Quick export: the table of clusters, the plot's data, the plot, the 3D view.
+   :width: 80%
 
 Figures
 -------

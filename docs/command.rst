@@ -20,21 +20,22 @@ the window.
 A whole script
 --------------
 
-MDANCE's own example, clustered and asked about from start to end. The
+The example of :doc:`tutorial` and of the quick-start guide, the tau
+peptide with their setup, clustered and asked about from start to end. The
 sections below say what each subcommand takes and answers:
 
 .. code-block:: tcl
 
    package require vmdance
-   # MDANCE's example (pip install mdance): mdance/data/aligned_tau.pdb, aligned_original_tau_6K.dcd, labels_60.csv
+   # the tau peptide of BitQT's examples: aligned_tau.pdb, aligned_original_tau_6K.dcd (MDANCE's package has them too, with labels_60.csv: pip install mdance, its mdance/data)
    mol new aligned_tau.pdb
    mol addfile aligned_original_tau_6K.dcd waitfor all
    animate delete beg 0 end 0             ;# the PDB's own frame: cluster the DCD's 6001 (VMD's frame = MDANCE's)
-   set sel "resid 3 to 12 and name CA N C O H"   ;# the atoms MDANCE's own tutorial clusters (50)
-   vmdance -sel $sel -algorithm kmeans -k 6 -kinit CompSim
-   # -> run 1 molid 0 sel {resid 3 to 12 and name CA N C O H} fit {} frames 6001 ... nclusters 6 sizes {699 1093 1223 1292 721 973} noise 0 ch 1005.6 db 2.01 ...
+   set sel "resid 3 to 12 and name N CA C O H"   ;# the atoms MDANCE's own tutorial clusters (50)
+   vmdance -sel $sel -fit $sel -fitframe 999 -fitmove 1 -algorithm kmeans -k 6 -kinit CompSim   ;# fitted onto frame 999, VMD's coordinates moved there
+   # -> run 1 molid 0 sel {resid 3 to 12 and name N CA C O H} fit {resid 3 to 12 and name N CA C O H} fitframe 999 fitmove 1 frames 6001 ... nclusters 6 sizes {582 1844 693 645 1225 1012} noise 0 ch 1142.8 db 1.78 ...
    vmdance help                        ;# the subcommands, a line each (vmdance help elbow: its usage)
-   vmdance alignment -sel $sel         ;# do the frames look superposed? as_is 3.711 fitted 3.304 ... superposed 1
+   vmdance alignment -sel $sel         ;# do the frames look superposed? as_is 3.38 fitted 3.304 ... superposed 1
    vmdance clusters                    ;# {cluster frames percent msd msd_to_representative representative_frame} ...
    vmdance get 2                       ;# frames, share, representative, silhouette, visits, members ...
    vmdance labels                      ;# {frame cluster ...}
@@ -43,7 +44,7 @@ sections below say what each subcommand takes and answers:
    vmdance silhouette -kind pairs      ;# every frame's silhouette from every frame (-kind centroid: from the mean structures)
    vmdance renumber                    ;# the clusters numbered by size, the largest 0: a new run
    vmdance -sel $sel -algorithm helm -k 6 -initial-labels labels_60.csv
-   vmdance radii -sel $sel             ;# a range for eQual's radius, from the frames: ... from 3.4 to 10 by 0.73
+   vmdance radii -sel $sel             ;# a range for eQual's radius, from the frames: ... from 2.4 to 7.9 by 0.61
    vmdance -sel $sel -algorithm equal -threshold 10
    vmdance elbow -sel $sel -kinit CompSim -from 2 -to 15   ;# {index k nclusters ch db sizes status message} ...
    vmdance elbow -sel $sel -kinit CompSim -from 2 -to 15 -stability 1   ;# again, with each k's stability across NANI's seedings (it replaces the last scan)
@@ -102,9 +103,9 @@ any input:
 .. code-block:: tcl
 
    vmdance alignment ?-mol top? ?-sel "name CA"? ?-first 0? ?-last -1? ?-step 1?
-       ;# as_is 3.711 fitted 3.304 frames 21 atoms 50 superposed 1 words {the frames are …}
+       ;# as_is 3.38 fitted 3.304 frames 21 atoms 50 superposed 1 words {the frames are …}
    vmdance radii ?-mol top? ?-sel "name CA"? ?-fit ""? ?-fitframe ""? ?-fitmove 0? ?-first 0? ?-last -1? ?-step 1?
-       ;# sample 147 pairs 10731 percentiles {2 3.42 5 4.5 10 5.57 25 7.56 50 10.3} from 3.4 to 10 by 0.73
+       ;# sample 147 pairs 10731 percentiles {2 2.44 5 3.26 10 4.09 25 5.73 50 7.89} from 2.4 to 7.9 by 0.61
 
 ``alignment`` takes a sample of the frames: the first and 20 others at
 most, evenly taken, and 300 of the atoms at most. It gives their mean RMSD

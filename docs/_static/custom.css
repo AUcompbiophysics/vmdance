@@ -53,3 +53,30 @@ table.algo-table td:first-child {
 table.algo-table td:first-child p {
     margin: 0.25rem 0;
 }
+
+/* The window's icons, beside their buttons' and plots' names: on white in
+   both themes (they are drawn for a light toolbar), a line of text tall;
+   larger in the tables that describe them. */
+img.tb-icon {
+    height: 1.6em;
+    width: auto;
+    vertical-align: middle;
+    background: #ffffff;
+    border-radius: 5px;
+    padding: 1px;
+    margin: 0 0.1em;
+}
+
+table.icon-table td:first-child img.tb-icon {
+    height: 2.4em;
+}
+
+table.icon-table td:first-child {
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+table.icon-table td:first-child p {
+    margin: 0.2rem 0;
+}

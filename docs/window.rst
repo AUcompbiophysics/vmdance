@@ -36,18 +36,117 @@ after a job.
 The toolbar
 -----------
 
-In order:
+Each button's icon is a small picture of what it does. Rest the pointer on
+a button: it says what it does, and its keys (Ctrl here; ⌘ on macOS). In
+order, left to right:
 
-- the left panel;
-- open and save a session;
-- export results and create figures;
-- **Cluster**, **Elbow scan** and **Cancel**, with the ring of the running
-  job's progress;
-- the thirteen plots;
-- colour by cluster, every representative, go to the selected cluster's
-  representative, render the 3D view;
-- Settings and the quick guide;
-- the plot options.
+.. list-table::
+   :header-rows: 1
+   :widths: 10 14 76
+   :class: icon-table
+
+   * -
+     - Button
+     - What it does
+   * - |icon-panel-left|
+     - Panel
+     - A book with its left page open: shows or hides the left panel, for
+       a wider plot (Ctrl+Shift+L).
+   * - |icon-open|
+     - Open
+     - A folder: opens a saved session, every run, scan and group as you
+       left them (Ctrl+O).
+   * - |icon-save|
+     - Save
+     - The floppy disk: keeps the session in a ``.vmdance`` file (Ctrl+S).
+   * - |icon-export|
+     - Export
+     - A table leaving the window: writes the tables (CSV), the labels,
+       the representatives' structures and each cluster's frames to a
+       folder (Ctrl+E; :doc:`files`).
+   * - |icon-figure|
+     - Figures
+     - A chart on a page: writes the plots as PDF, PNG or EPS, sized for a
+       paper's column or a slide (Ctrl+P; :doc:`files`).
+   * - |icon-cluster|
+     - Cluster
+     - Play: clusters the frames as Setup says, in the background
+       (Ctrl+R). The ring beside Cancel fills as the job runs.
+   * - |icon-elbow|
+     - Elbow
+     - A curve with its knee ringed: the same clustering at every k of
+       Scans ▸ Elbow (eQual: at every radius), to see where more clusters
+       stop paying (:doc:`scans`).
+   * - |icon-cancel|
+     - Cancel
+     - Stop: ends the running job, and keeps what was there before. Grey
+       while nothing runs.
+   * - |icon-tab-populations|
+     - The plots
+     - Thirteen buttons, each a miniature of its plot:
+       |icon-tab-populations| |icon-tab-makeup| |icon-tab-timeline|
+       |icon-tab-transitions| |icon-tab-residence| |icon-tab-compactness|
+       |icon-tab-distances| |icon-tab-tree| |icon-tab-silhouette|
+       |icon-tab-map| |icon-tab-profiles| |icon-tab-elbow| |icon-tab-sweep|.
+       They open it (Ctrl+1 to Ctrl+9 for the first nine). :doc:`plots`
+       says which is which.
+   * - |icon-colour|
+     - Colour
+     - A chain painted in its cluster's colour: colours the molecule, in
+       VMD's 3D window, by the cluster of the frame VMD shows. It follows
+       the trajectory as it plays (:doc:`threed`).
+   * - |icon-reps|
+     - Reps
+     - Several chains, each in its colour: draws every cluster's
+       representative at once.
+   * - |icon-goto|
+     - Go
+     - A target: VMD goes to the selected cluster's representative frame.
+   * - |icon-render|
+     - Render
+     - A camera: saves VMD's 3D view as a PNG.
+   * - |icon-settings|
+     - Settings
+     - The gear: the backend (CPP-MDANCE's program or its library), the
+       text's and the window's size, the theme, the icons' size.
+   * - |icon-help|
+     - Help
+     - The quick guide, in a window of its own.
+   * - |icon-panel-right|
+     - Options
+     - The plot's dials, at the far right: shows or hides the panel of
+       the plot options (Ctrl+Shift+O).
+
+The five tabs of the left panel have icons too:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 10 14 76
+   :class: icon-table
+
+   * -
+     - Tab
+     - What it holds
+   * - |icon-pane-setup|
+     - Setup
+     - What to cluster (the molecule, the atoms, the frames, the fit) and
+       how (the algorithm and its parameters).
+   * - |icon-pane-results|
+     - Results
+     - The runs, the table of the current one's clusters, and the groups,
+       the map and the profiles.
+   * - |icon-pane-scans|
+     - Scans
+     - The elbow scan (the scores at every k, and the stability of NANI's
+       seedings) and the sweep of algorithms and seedings.
+   * - |icon-pane-tools|
+     - Tools
+     - PRIME's predicted native frame, the clusters' similarity, and
+       frames picked without clustering.
+   * - |icon-pane-3d|
+     - 3D
+     - How VMD draws the clusters: colours, the representatives, an
+       overlay of the selected clusters.
 
 Setup
 -----
